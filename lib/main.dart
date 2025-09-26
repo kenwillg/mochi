@@ -1,15 +1,45 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/legacy.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:table_calendar/table_calendar.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:intl/intl.dart'; // FIX: Corrected package import path
 
 // --- App Theme Colors ---
-// Using soft, friendly colors that match the "Mochi" theme.
-const Color primaryColor = Color(0xFF86A873); // A soft, earthy green
-const Color backgroundColor = Color(0xFFF7F7F2); // A gentle off-white
-const Color accentColor = Color(0xFFF2A384); // A warm, peachy accent
+const Color primaryColor = Color(0xFF86A873);
+const Color backgroundColor = Color(0xFFF7F7F2);
+const Color accentColor = Color(0xFFF2A384);
+
+// --- Data Models ---
+enum Mood { happy, neutral, sad }
+
+// --- Providers (Our App's "State") ---
+
+// 1. THE "BRAIN" - This is our app's central database for moods.
+class JournalDataNotifier extends StateNotifier<Map<DateTime, Mood?>> {
+  JournalDataNotifier() : super({});
+
+  void updateMood(DateTime date, Mood newMood) {
+    // We create a new map so Riverpod knows to update the UI.
+    state = {...state, date: newMood};
+  }
+}
+
+final journalProvider =
+    StateNotifierProvider<JournalDataNotifier, Map<DateTime, Mood?>>((ref) {
+      return JournalDataNotifier();
+    });
+
+// 2. Holds the currently selected day on the calendar.
+final selectedDateProvider = StateProvider<DateTime>((ref) {
+  return DateTime.now();
+});
+
+// 3. Provider to handle the loading spinner state.
+final isSavingProvider = StateProvider<bool>((ref) => false);
 
 void main() {
-  runApp(const MochiApp());
+  runApp(const ProviderScope(child: MochiApp()));
 }
 
 class MochiApp extends StatelessWidget {
@@ -20,18 +50,15 @@ class MochiApp extends StatelessWidget {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
       title: 'Mochi',
-      // --- Applying the App Theme ---
-      // We define the overall look and feel, including our doodle-ish font.
       theme: ThemeData(
         primaryColor: primaryColor,
         scaffoldBackgroundColor: backgroundColor,
-        // Using Google Fonts to get a friendly, handwritten style.
         textTheme: GoogleFonts.patrickHandTextTheme(
           Theme.of(context).textTheme,
         ),
         appBarTheme: const AppBarTheme(
-          backgroundColor: Colors.transparent, // Make AppBar transparent
-          elevation: 0, // Remove shadow
+          backgroundColor: Colors.transparent,
+          elevation: 0,
           centerTitle: true,
           titleTextStyle: TextStyle(
             fontFamily: 'PatrickHand',
@@ -47,86 +74,108 @@ class MochiApp extends StatelessWidget {
   }
 }
 
-class MochiHomePage extends StatefulWidget {
+// --- CALENDAR PAGE ---
+class MochiHomePage extends ConsumerWidget {
   const MochiHomePage({super.key});
 
   @override
-  State<MochiHomePage> createState() => _MochiHomePageState();
-}
+  Widget build(BuildContext context, WidgetRef ref) {
+    // We watch the selectedDateProvider to highlight the day on the calendar.
+    final selectedDate = ref.watch(selectedDateProvider);
+    final journalData = ref.watch(journalProvider);
 
-class _MochiHomePageState extends State<MochiHomePage> {
-  // --- State for the Calendar ---
-  // The calendar needs a variable to keep track of the currently selected day.
-  DateTime _focusedDay = DateTime.now();
-  DateTime? _selectedDay;
-
-  @override
-  Widget build(BuildContext context) {
     return Scaffold(
-      // --- Top App Bar ---
-      // This is the bar at the top of the screen.
       appBar: AppBar(
         title: const Text('My Mochi Journal'),
-        leading: const Icon(Icons.menu_book_rounded), // A cute book icon
+        leading: const Icon(Icons.menu_book_rounded),
       ),
-      // --- Main Content Area ---
-      body: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          children: [
-            // --- The Calendar Widget ---
-            // This is where we use the 'table_calendar' package we added.
-            TableCalendar(
-              firstDay: DateTime.utc(
-                2020,
-                1,
-                1,
-              ), // The first day the user can select
-              lastDay: DateTime.utc(
-                2030,
-                12,
-                31,
-              ), // The last day the user can select
-              focusedDay: _focusedDay, // The month that is currently in view
-              calendarFormat: CalendarFormat.month, // Show one month at a time
-              // --- Styling the Calendar to look cute ---
-              headerStyle: HeaderStyle(
-                titleCentered: true,
-                formatButtonVisible: false, // Hides the "2 weeks" button
-                titleTextStyle: GoogleFonts.patrickHand(fontSize: 20.0),
-              ),
-              calendarStyle: CalendarStyle(
-                // Style for the selected day
-                selectedDecoration: const BoxDecoration(
-                  color: primaryColor,
-                  shape: BoxShape.circle,
+      // --- Floating Action Button for adding entries ---
+      floatingActionButton: FloatingActionButton(
+        onPressed: () async {
+          // FIX: A safer way to handle dialogs.
+          // We 'await' the result of the entry dialog.
+          final bool? entryWasSaved = await showDialog<bool>(
+            context: context,
+            builder: (context) {
+              return AlertDialog(
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(15),
                 ),
-                // Style for today's date
-                todayDecoration: BoxDecoration(
-                  color: accentColor.withOpacity(0.5),
-                  shape: BoxShape.circle,
-                ),
-              ),
+                contentPadding: const EdgeInsets.all(0),
+                content: DailyDetailsCard(date: selectedDate),
+              );
+            },
+          );
 
-              // --- Handling User Interaction ---
-              selectedDayPredicate: (day) {
-                // This is used to determine which day is currently selected.
-                return isSameDay(_selectedDay, day);
-              },
-              onDaySelected: (selectedDay, focusedDay) {
-                // This function is called when the user taps on a day.
-                setState(() {
-                  _selectedDay = selectedDay;
-                  _focusedDay = focusedDay; // update `_focusedDay` here as well
-                });
+          // If the entry was saved, we then show the success dialog.
+          if (entryWasSaved == true && context.mounted) {
+            showDialog(
+              context: context,
+              builder: (context) => AlertDialog(
+                title: const Text("Success!"),
+                content: const Text("Your Mochi entry has been saved."),
+                actions: [
+                  TextButton(
+                    onPressed: () => Navigator.of(context).pop(),
+                    child: const Text("OK"),
+                  ),
+                ],
+              ),
+            );
+          }
+        },
+        backgroundColor: accentColor,
+        child: const Icon(Icons.add, color: Colors.white),
+      ),
+      body: ListView(
+        padding: const EdgeInsets.all(16.0),
+        children: [
+          TableCalendar(
+            firstDay: DateTime.utc(2020, 1, 1),
+            lastDay: DateTime.utc(2030, 12, 31),
+            focusedDay: selectedDate,
+            selectedDayPredicate: (day) => isSameDay(selectedDate, day),
+            onDaySelected: (newSelectedDay, newFocusedDay) {
+              ref.read(selectedDateProvider.notifier).state = newSelectedDay;
+            },
+            calendarBuilders: CalendarBuilders(
+              markerBuilder: (context, date, events) {
+                final dayOnly = DateTime(date.year, date.month, date.day);
+                if (journalData.containsKey(dayOnly)) {
+                  return Positioned(
+                    right: 1,
+                    bottom: 1,
+                    child: Container(
+                      width: 7,
+                      height: 7,
+                      decoration: const BoxDecoration(
+                        color: accentColor,
+                        shape: BoxShape.circle,
+                      ),
+                    ),
+                  );
+                }
+                return null;
               },
             ),
-          ],
-        ),
+            headerStyle: HeaderStyle(
+              titleCentered: true,
+              formatButtonVisible: false,
+              titleTextStyle: GoogleFonts.patrickHand(fontSize: 20.0),
+            ),
+            calendarStyle: CalendarStyle(
+              selectedDecoration: const BoxDecoration(
+                color: primaryColor,
+                shape: BoxShape.circle,
+              ),
+              todayDecoration: BoxDecoration(
+                color: accentColor.withOpacity(0.5),
+                shape: BoxShape.circle,
+              ),
+            ),
+          ),
+        ],
       ),
-
-      // --- Bottom Menu Bar Placeholder ---
-      // This is your placeholder menu bar at the bottom.
       bottomNavigationBar: BottomNavigationBar(
         backgroundColor: Colors.white,
         selectedItemColor: primaryColor,
@@ -137,12 +186,124 @@ class _MochiHomePageState extends State<MochiHomePage> {
             label: 'Calendar',
           ),
           BottomNavigationBarItem(
-            icon: Icon(Icons.add_circle_outline_rounded),
-            label: 'New Entry',
-          ),
-          BottomNavigationBarItem(
             icon: Icon(Icons.bar_chart_rounded),
             label: 'Stats',
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// --- THE REUSABLE DETAILS CARD (Used in the Dialog) ---
+class DailyDetailsCard extends ConsumerWidget {
+  final DateTime date; // The card now knows which date it is working on.
+
+  const DailyDetailsCard({required this.date, super.key});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    // To properly check our map, we must ignore the time part of the date.
+    final dateKey = DateTime(date.year, date.month, date.day);
+
+    final journalData = ref.watch(journalProvider);
+    final selectedMood = journalData[dateKey]; // Look up using the dateKey
+    final isSaving = ref.watch(isSavingProvider);
+    final formattedDate = DateFormat.yMMMMd().format(date);
+
+    return Padding(
+      padding: const EdgeInsets.all(16.0),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min, // Makes the card fit its content
+        children: [
+          Text(
+            formattedDate, // Show the date this entry is for
+            style: GoogleFonts.patrickHand(
+              fontSize: 20,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          const SizedBox(height: 12),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceAround,
+            children: [
+              for (final mood
+                  in Mood.values) // A clean way to create all 3 chips
+                ChoiceChip(
+                  label: Text(mood.name),
+                  avatar: Icon(
+                    mood == Mood.happy
+                        ? Icons.sentiment_very_satisfied
+                        : mood == Mood.neutral
+                        ? Icons.sentiment_neutral
+                        : Icons.sentiment_very_dissatisfied,
+                  ),
+                  selected: selectedMood == mood,
+                  onSelected: (isSelected) {
+                    if (isSelected) {
+                      ref
+                          .read(journalProvider.notifier)
+                          .updateMood(dateKey, mood);
+                    }
+                  },
+                  selectedColor: primaryColor.withOpacity(0.7),
+                ),
+            ],
+          ),
+          const Divider(height: 30),
+          // --- Placeholder for Image remains the same ---
+          Container(
+            height: 100,
+            width: double.infinity,
+            decoration: BoxDecoration(
+              color: backgroundColor,
+              borderRadius: BorderRadius.circular(10),
+              border: Border.all(
+                color: Colors.grey.shade300,
+                style: BorderStyle.solid,
+              ),
+            ),
+            child: const Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(Icons.add_a_photo_outlined, color: Colors.grey),
+                  SizedBox(height: 4),
+                  Text("Add a photo", style: TextStyle(color: Colors.grey)),
+                ],
+              ),
+            ),
+          ),
+          const SizedBox(height: 20),
+          SizedBox(
+            width: double.infinity,
+            child: ElevatedButton(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: accentColor,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                padding: const EdgeInsets.symmetric(vertical: 12),
+              ),
+              onPressed: () async {
+                ref.read(isSavingProvider.notifier).state = true;
+                await Future.delayed(const Duration(seconds: 2));
+                ref.read(isSavingProvider.notifier).state = false;
+
+                // FIX: Pop the dialog and return 'true' to signal success.
+                if (context.mounted) {
+                  Navigator.of(context).pop(true);
+                }
+              },
+              child: isSaving
+                  ? const SizedBox(
+                      height: 24,
+                      width: 24,
+                      child: CircularProgressIndicator(color: Colors.white),
+                    )
+                  : const Text("Save Entry", style: TextStyle(fontSize: 18)),
+            ),
           ),
         ],
       ),
