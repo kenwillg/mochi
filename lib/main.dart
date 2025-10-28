@@ -7,6 +7,7 @@ import 'package:intl/intl.dart'; // FIX: Corrected package import path
 
 import 'screens/demo_menu_screen.dart';
 import 'screens/navigation_demo_screen.dart';
+import 'screens/rest_workflow/rest_workflow_screen.dart';
 
 // --- App Theme Colors ---
 const Color primaryColor = Color(0xFF86A873);
@@ -77,6 +78,7 @@ class MochiApp extends StatelessWidget {
         MochiHomePage.routeName: (context) => const MochiHomePage(),
         DemoMenuScreen.routeName: (context) => const DemoMenuScreen(),
         NavigationDemoScreen.routeName: (context) => const NavigationDemoScreen(),
+        RestWorkflowScreen.routeName: (context) => const RestWorkflowScreen(),
       },
       onGenerateRoute: NavigationDemoScreen.onGenerateRoute,
     );

@@ -5,6 +5,7 @@ import 'null_safety_demo_screen.dart';
 import 'set_state_demo_screen.dart';
 import 'stateless_stateful_demo_screen.dart';
 import 'navigation_demo_screen.dart';
+import 'rest_workflow/rest_workflow_screen.dart';
 
 class DemoMenuScreen extends StatelessWidget {
   const DemoMenuScreen({super.key});
@@ -38,6 +39,12 @@ class DemoMenuScreen extends StatelessWidget {
         title: 'Navigator push vs named routes',
         subtitle: 'See arguments passed forward and data returned on pop.',
         routeName: NavigationDemoScreen.routeName,
+      ),
+      _DemoEntry(
+        title: 'REST with Riverpod',
+        subtitle:
+            'Fetch, create, and update JSONPlaceholder posts via providers.',
+        routeName: RestWorkflowScreen.routeName,
       ),
     ];
 
