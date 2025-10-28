@@ -6,6 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart'; // FIX: Corrected package import path
 
 import 'screens/demo_menu_screen.dart';
+import 'screens/navigation_demo_screen.dart';
 
 // --- App Theme Colors ---
 const Color primaryColor = Color(0xFF86A873);
@@ -71,7 +72,13 @@ class MochiApp extends StatelessWidget {
           iconTheme: IconThemeData(color: Colors.black87),
         ),
       ),
-      home: const MochiHomePage(),
+      initialRoute: MochiHomePage.routeName,
+      routes: {
+        MochiHomePage.routeName: (context) => const MochiHomePage(),
+        DemoMenuScreen.routeName: (context) => const DemoMenuScreen(),
+        NavigationDemoScreen.routeName: (context) => const NavigationDemoScreen(),
+      },
+      onGenerateRoute: NavigationDemoScreen.onGenerateRoute,
     );
   }
 }
@@ -79,6 +86,8 @@ class MochiApp extends StatelessWidget {
 // --- CALENDAR PAGE ---
 class MochiHomePage extends ConsumerWidget {
   const MochiHomePage({super.key});
+
+  static const routeName = '/';
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -93,9 +102,7 @@ class MochiHomePage extends ConsumerWidget {
           icon: const Icon(Icons.menu_book_rounded),
           tooltip: 'Open learning demos',
           onPressed: () {
-            Navigator.of(context).push(
-              MaterialPageRoute(builder: (_) => const DemoMenuScreen()),
-            );
+            Navigator.of(context).pushNamed(DemoMenuScreen.routeName);
           },
         ),
       ),
