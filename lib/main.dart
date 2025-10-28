@@ -5,6 +5,8 @@ import 'package:table_calendar/table_calendar.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart'; // FIX: Corrected package import path
 
+import 'screens/demo_menu_screen.dart';
+
 // --- App Theme Colors ---
 const Color primaryColor = Color(0xFF86A873);
 const Color backgroundColor = Color(0xFFF7F7F2);
@@ -87,7 +89,15 @@ class MochiHomePage extends ConsumerWidget {
     return Scaffold(
       appBar: AppBar(
         title: const Text('My Mochi Journal'),
-        leading: const Icon(Icons.menu_book_rounded),
+        leading: IconButton(
+          icon: const Icon(Icons.menu_book_rounded),
+          tooltip: 'Open learning demos',
+          onPressed: () {
+            Navigator.of(context).push(
+              MaterialPageRoute(builder: (_) => const DemoMenuScreen()),
+            );
+          },
+        ),
       ),
       // --- Floating Action Button for adding entries ---
       floatingActionButton: FloatingActionButton(
