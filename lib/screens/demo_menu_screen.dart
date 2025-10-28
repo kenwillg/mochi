@@ -4,9 +4,12 @@ import 'lifting_state_demo_screen.dart';
 import 'null_safety_demo_screen.dart';
 import 'set_state_demo_screen.dart';
 import 'stateless_stateful_demo_screen.dart';
+import 'navigation_demo_screen.dart';
 
 class DemoMenuScreen extends StatelessWidget {
   const DemoMenuScreen({super.key});
+
+  static const routeName = '/demos';
 
   @override
   Widget build(BuildContext context) {
@@ -31,6 +34,11 @@ class DemoMenuScreen extends StatelessWidget {
         subtitle: 'Handle nullable data, validate forms, and overlay widgets safely.',
         builder: (_) => const NullSafetyDemoScreen(),
       ),
+      _DemoEntry(
+        title: 'Navigator push vs named routes',
+        subtitle: 'See arguments passed forward and data returned on pop.',
+        routeName: NavigationDemoScreen.routeName,
+      ),
     ];
 
     return Scaffold(
@@ -44,9 +52,7 @@ class DemoMenuScreen extends StatelessWidget {
             title: Text(demo.title),
             subtitle: Text(demo.subtitle),
             trailing: const Icon(Icons.chevron_right),
-            onTap: () => Navigator.of(context).push(
-              MaterialPageRoute(builder: demo.builder),
-            ),
+            onTap: () => demo.navigate(context),
           );
         },
       ),
@@ -58,10 +64,28 @@ class _DemoEntry {
   const _DemoEntry({
     required this.title,
     required this.subtitle,
-    required this.builder,
+    this.builder,
+    this.routeName,
+    this.arguments,
   });
 
   final String title;
   final String subtitle;
-  final WidgetBuilder builder;
+  final WidgetBuilder? builder;
+  final String? routeName;
+  final Object? arguments;
+
+  void navigate(BuildContext context) {
+    if (routeName != null) {
+      Navigator.of(context).pushNamed(routeName!, arguments: arguments);
+      return;
+    }
+
+    final builder = this.builder;
+    if (builder != null) {
+      Navigator.of(context).push(
+        MaterialPageRoute(builder: builder),
+      );
+    }
+  }
 }

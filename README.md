@@ -72,6 +72,10 @@ This guide connects each topic in the syllabus to the corresponding code so lear
 - `lib/main.dart` → `MochiApp`, `MochiHomePage`, and `DailyDetailsCard` demonstrate stateless/stateful compositions, Scaffold layout, and custom widget building.
 - Explore the `TableCalendar` widget configuration to see third-party widget integration and builder callbacks.
 
+### Navigation & Routing
+- `lib/main.dart` registers named routes (`MochiHomePage.routeName`, `DemoMenuScreen.routeName`, and `NavigationDemoScreen.routeName`) and wires `onGenerateRoute` so detail pages can decode typed arguments.
+- `lib/screens/navigation_demo_screen.dart` provides two flows: one uses `Navigator.push` with a constructor argument, the other uses `Navigator.pushNamed` with a `NamedRouteDetailsArgs` payload. Both routes call `Navigator.pop` with a string result that surfaces back in the parent UI.
+
 ### State Management (Riverpod)
 - `JournalDataNotifier` and related providers (`journalProvider`, `selectedDateProvider`, `isSavingProvider`) show how global state flows through Riverpod.
 - Look at the `ConsumerWidget` implementations to understand how widgets read and react to provider changes.
