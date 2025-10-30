@@ -4,7 +4,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
 
 import '../models/mood.dart';
-import '../providers/journal_provider.dart';
+import '../controllers/journal_controller.dart';
 import '../theme/app_theme.dart';
 
 class DailyDetailsCard extends ConsumerWidget {
