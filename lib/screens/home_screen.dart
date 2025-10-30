@@ -9,15 +9,64 @@ import '../utils/constants.dart';
 import '../widgets/daily_details_card.dart';
 import '../widgets/weather_icon_button.dart';
 import 'demo_menu_screen.dart';
+import 'journal_entry_screen.dart';
 
 // --- CALENDAR PAGE ---
-class MochiHomePage extends ConsumerWidget {
+class MochiHomePage extends ConsumerStatefulWidget {
   const MochiHomePage({super.key});
 
   static const routeName = '/';
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<MochiHomePage> createState() => _MochiHomePageState();
+}
+
+class _MochiHomePageState extends ConsumerState<MochiHomePage> {
+  DateTime? _lastTappedDay;
+  DateTime? _lastTapTimestamp;
+
+  Future<void> _openEntryDialog(DateTime date) async {
+    final bool? entryWasSaved = await showDialog<bool>(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(15),
+          ),
+          contentPadding: const EdgeInsets.all(0),
+          content: DailyDetailsCard(date: date),
+        );
+      },
+    );
+
+    if (entryWasSaved == true && context.mounted) {
+      showDialog(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: const Text("Success!"),
+          content: const Text("Your Mochi entry has been saved."),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text("OK"),
+            ),
+          ],
+        ),
+      );
+    }
+  }
+
+  bool _entryHasContent(JournalEntry? entry) {
+    if (entry == null) {
+      return false;
+    }
+    return entry.mood != null ||
+        entry.strokes.isNotEmpty ||
+        entry.stickers.isNotEmpty;
+  }
+
+  @override
+  Widget build(BuildContext context) {
     // We watch the selectedDateProvider to highlight the day on the calendar.
     final selectedDate = ref.watch(selectedDateProvider);
     final journalData = ref.watch(journalProvider);
@@ -38,39 +87,7 @@ class MochiHomePage extends ConsumerWidget {
       ),
       // --- Floating Action Button for adding entries ---
       floatingActionButton: FloatingActionButton(
-        onPressed: () async {
-          // FIX: A safer way to handle dialogs.
-          // We 'await' the result of the entry dialog.
-          final bool? entryWasSaved = await showDialog<bool>(
-            context: context,
-            builder: (context) {
-              return AlertDialog(
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(15),
-                ),
-                contentPadding: const EdgeInsets.all(0),
-                content: DailyDetailsCard(date: selectedDate),
-              );
-            },
-          );
-
-          // If the entry was saved, we then show the success dialog.
-          if (entryWasSaved == true && context.mounted) {
-            showDialog(
-              context: context,
-              builder: (context) => AlertDialog(
-                title: const Text("Success!"),
-                content: const Text("Your Mochi entry has been saved."),
-                actions: [
-                  TextButton(
-                    onPressed: () => Navigator.of(context).pop(),
-                    child: const Text("OK"),
-                  ),
-                ],
-              ),
-            );
-          }
-        },
+        onPressed: () => _openEntryDialog(selectedDate),
         backgroundColor: accentColor,
         child: const Icon(Icons.add, color: Colors.white),
       ),
@@ -82,8 +99,33 @@ class MochiHomePage extends ConsumerWidget {
             lastDay: DateTime.utc(2030, 12, 31),
             focusedDay: selectedDate,
             selectedDayPredicate: (day) => isSameDay(selectedDate, day),
-            onDaySelected: (newSelectedDay, newFocusedDay) {
+            onDaySelected: (newSelectedDay, newFocusedDay) async {
               ref.read(selectedDateProvider.notifier).state = newSelectedDay;
+
+              final now = DateTime.now();
+              final isDoubleTap =
+                  _lastTappedDay != null &&
+                      isSameDay(_lastTappedDay, newSelectedDay) &&
+                      _lastTapTimestamp != null &&
+                      now.difference(_lastTapTimestamp!) <
+                          const Duration(milliseconds: 500);
+
+              _lastTappedDay = newSelectedDay;
+              _lastTapTimestamp = now;
+
+              if (isDoubleTap) {
+                final dateKey =
+                    DateTime(newSelectedDay.year, newSelectedDay.month, newSelectedDay.day);
+                final entry = ref.read(journalProvider)[dateKey];
+                if (_entryHasContent(entry)) {
+                  await Navigator.of(context).pushNamed(
+                    JournalEntryScreen.routeName,
+                    arguments: JournalEntryScreenArguments(date: dateKey),
+                  );
+                } else {
+                  await _openEntryDialog(dateKey);
+                }
+              }
             },
             calendarBuilders: CalendarBuilders(
               markerBuilder: (context, date, events) {

@@ -50,9 +50,13 @@ class _JournalEntryScreenState extends ConsumerState<JournalEntryScreen> {
   }
 
   void _onPanStart(DragStartDetails details) {
+    if (!_isPointInsideCanvas(details.localPosition)) {
+      return;
+    }
+    final clampedPosition = _clampToCanvas(details.localPosition);
     setState(() {
       _selectedStickerIndex = null;
-      _strokes.add(DrawnStroke(points: [details.localPosition]));
+      _strokes.add(DrawnStroke(points: [clampedPosition]));
     });
   }
 
@@ -60,9 +64,10 @@ class _JournalEntryScreenState extends ConsumerState<JournalEntryScreen> {
     if (_strokes.isEmpty) {
       return;
     }
+    final clampedPosition = _clampToCanvas(details.localPosition);
     setState(() {
       final points = _strokes.last.points;
-      points.add(details.localPosition);
+      points.add(clampedPosition);
     });
   }
 
@@ -282,6 +287,31 @@ class _JournalEntryScreenState extends ConsumerState<JournalEntryScreen> {
       );
     }
     return widgets;
+  }
+
+  bool _isPointInsideCanvas(Offset position) {
+    final renderBox =
+        _canvasKey.currentContext?.findRenderObject() as RenderBox?;
+    if (renderBox == null) {
+      return true;
+    }
+    final size = renderBox.size;
+    return position.dx >= 0 &&
+        position.dy >= 0 &&
+        position.dx <= size.width &&
+        position.dy <= size.height;
+  }
+
+  Offset _clampToCanvas(Offset position) {
+    final renderBox =
+        _canvasKey.currentContext?.findRenderObject() as RenderBox?;
+    if (renderBox == null) {
+      return position;
+    }
+    final size = renderBox.size;
+    final clampedDx = position.dx.clamp(0.0, size.width) as double;
+    final clampedDy = position.dy.clamp(0.0, size.height) as double;
+    return Offset(clampedDx, clampedDy);
   }
 }
 
