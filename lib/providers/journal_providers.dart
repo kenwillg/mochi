@@ -1,4 +1,4 @@
-import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_riverpod/legacy.dart';
 
 import '../models/journal_entry.dart';
 import '../models/mood.dart';
@@ -19,10 +19,7 @@ class JournalDataNotifier extends StateNotifier<Map<DateTime, JournalEntry>> {
   void updateMood(DateTime date, Mood newMood) {
     final normalized = _normalize(date);
     final current = entryFor(normalized);
-    state = {
-      ...state,
-      normalized: current.copyWith(mood: newMood),
-    };
+    state = {...state, normalized: current.copyWith(mood: newMood)};
   }
 
   void updateCanvas(
@@ -44,8 +41,8 @@ class JournalDataNotifier extends StateNotifier<Map<DateTime, JournalEntry>> {
 
 final journalProvider =
     StateNotifierProvider<JournalDataNotifier, Map<DateTime, JournalEntry>>(
-  (ref) => JournalDataNotifier(),
-);
+      (ref) => JournalDataNotifier(),
+    );
 
 // 2. Holds the currently selected day on the calendar.
 final selectedDateProvider = StateProvider<DateTime>((ref) {
