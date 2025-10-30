@@ -129,7 +129,7 @@ State management utama ditangani oleh Riverpod dan terpusat di `lib/providers/jo
 ### Tugas 5: Persistence
 
 * **Riverpod Flow:** (Tugas 5.1) Selesai. Provider sudah terstruktur dan dapat diakses oleh semua *screen* yang membutuhkan (`home_screen`, `daily_details_card`, `journal_entry_screen`).
-* **SQLite:** (Tugas 5.2) Selesai.
+* **SQLite:** (Tugas 5.2) (BELUM SELESAI)
     * `lib/services/database_service.dart`: Mengelola inisialisasi DB, `CREATE TABLE`, `loadEntries`, dan `saveEntry`.
     * `lib/models/journal_entry.dart`: Mengimplementasikan `toDbMap()` dan `fromDbMap()` untuk serialisasi JSON.
     * `lib/providers/journal_providers.dart`: `JournalDataNotifier` sekarang di-inject dengan `DatabaseService`. Data di-load saat provider pertama kali dibuat dan disimpan ke DB setiap kali `updateMood` atau `updateCanvas` dipanggil.
