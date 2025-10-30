@@ -3,9 +3,11 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
 
+import '../models/journal_entry.dart';
 import '../models/mood.dart';
 import '../providers/journal_providers.dart';
 import '../utils/constants.dart';
+import '../screens/journal_entry_screen.dart';
 
 // --- THE REUSABLE DETAILS CARD (Used in the Dialog) ---
 class DailyDetailsCard extends ConsumerWidget {
@@ -19,7 +21,9 @@ class DailyDetailsCard extends ConsumerWidget {
     final dateKey = DateTime(date.year, date.month, date.day);
 
     final journalData = ref.watch(journalProvider);
-    final selectedMood = journalData[dateKey]; // Look up using the dateKey
+    final selectedEntry =
+        journalData[dateKey] ?? const JournalEntry(); // Look up using the dateKey
+    final selectedMood = selectedEntry.mood;
     final isSaving = ref.watch(isSavingProvider);
     final formattedDate = DateFormat.yMMMMd().format(date);
 
@@ -64,25 +68,43 @@ class DailyDetailsCard extends ConsumerWidget {
             ],
           ),
           const Divider(height: 30),
-          // --- Placeholder for Image remains the same ---
-          Container(
-            height: 100,
-            width: double.infinity,
-            decoration: BoxDecoration(
-              color: backgroundColor,
-              borderRadius: BorderRadius.circular(10),
-              border: Border.all(
-                color: Colors.grey.shade300,
-                style: BorderStyle.solid,
+          InkWell(
+            borderRadius: BorderRadius.circular(10),
+            onTap: () {
+              Navigator.of(context).pushNamed(
+                JournalEntryScreen.routeName,
+                arguments: JournalEntryScreenArguments(date: dateKey),
+              );
+            },
+            child: Container(
+              height: 100,
+              width: double.infinity,
+              decoration: BoxDecoration(
+                color: backgroundColor,
+                borderRadius: BorderRadius.circular(10),
+                border: Border.all(
+                  color: Colors.grey.shade300,
+                  style: BorderStyle.solid,
+                ),
               ),
-            ),
-            child: const Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              child: Row(
                 children: [
-                  Icon(Icons.add_a_photo_outlined, color: Colors.grey),
-                  SizedBox(height: 4),
-                  Text("Add a photo", style: TextStyle(color: Colors.grey)),
+                  const Icon(Icons.draw_rounded, color: Colors.grey),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Text(
+                      selectedEntry.strokes.isEmpty &&
+                              selectedEntry.stickers.isEmpty
+                          ? 'Make a journal entry'
+                          : 'Edit journal entry',
+                      style: const TextStyle(
+                        color: Colors.grey,
+                        fontSize: 16,
+                      ),
+                    ),
+                  ),
+                  const Icon(Icons.chevron_right, color: Colors.grey),
                 ],
               ),
             ),

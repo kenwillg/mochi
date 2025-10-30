@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:table_calendar/table_calendar.dart';
 
+import '../models/journal_entry.dart';
 import '../providers/journal_providers.dart';
 import '../utils/constants.dart';
 import '../widgets/daily_details_card.dart';
@@ -83,7 +84,11 @@ class MochiHomePage extends ConsumerWidget {
             calendarBuilders: CalendarBuilders(
               markerBuilder: (context, date, events) {
                 final dayOnly = DateTime(date.year, date.month, date.day);
-                if (journalData.containsKey(dayOnly)) {
+                final JournalEntry? entry = journalData[dayOnly];
+                if (entry != null &&
+                    (entry.mood != null ||
+                        entry.strokes.isNotEmpty ||
+                        entry.stickers.isNotEmpty)) {
                   return Positioned(
                     right: 1,
                     bottom: 1,
