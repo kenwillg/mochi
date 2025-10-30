@@ -35,18 +35,25 @@ class _JournalEntryScreenState extends ConsumerState<JournalEntryScreen> {
   @override
   void initState() {
     super.initState();
-    final entry = ref
-        .read(journalProvider.notifier)
-        .entryFor(widget.date);
+    final entry = ref.read(journalProvider.notifier).entryFor(widget.date);
     _strokes
       ..clear()
-      ..addAll(entry.strokes
-          .map((stroke) => DrawnStroke(points: List.of(stroke.points))));
+      ..addAll(
+        entry.strokes.map(
+          (stroke) => DrawnStroke(points: List.of(stroke.points)),
+        ),
+      );
     _stickers
       ..clear()
-      ..addAll(entry.stickers
-          .map((sticker) =>
-              StickerPlacement(mood: sticker.mood, position: sticker.position, size: sticker.size)));
+      ..addAll(
+        entry.stickers.map(
+          (sticker) => StickerPlacement(
+            mood: sticker.mood,
+            position: sticker.position,
+            size: sticker.size,
+          ),
+        ),
+      );
   }
 
   void _onPanStart(DragStartDetails details) {
@@ -93,29 +100,32 @@ class _JournalEntryScreenState extends ConsumerState<JournalEntryScreen> {
         : Offset(size.width / 2, size.height / 2);
     setState(() {
       _stickers.add(
-        StickerPlacement(
-          mood: mood,
-          position: position,
-          size: defaultSize,
-        ),
+        StickerPlacement(mood: mood, position: position, size: defaultSize),
       );
       _selectedStickerIndex = _stickers.length - 1;
     });
   }
 
   void _saveEntry() {
-    ref.read(journalProvider.notifier).updateCanvas(
+    ref
+        .read(journalProvider.notifier)
+        .updateCanvas(
           widget.date,
           strokes: _strokes
-              .map((stroke) =>
-                  DrawnStroke(points: stroke.points.map((e) => Offset(e.dx, e.dy)).toList()))
+              .map(
+                (stroke) => DrawnStroke(
+                  points: stroke.points.map((e) => Offset(e.dx, e.dy)).toList(),
+                ),
+              )
               .toList(),
           stickers: _stickers
-              .map((sticker) => StickerPlacement(
-                    mood: sticker.mood,
-                    position: Offset(sticker.position.dx, sticker.position.dy),
-                    size: sticker.size,
-                  ))
+              .map(
+                (sticker) => StickerPlacement(
+                  mood: sticker.mood,
+                  position: Offset(sticker.position.dx, sticker.position.dy),
+                  size: sticker.size,
+                ),
+              )
               .toList(),
         );
     Navigator.of(context).pop();
@@ -167,8 +177,8 @@ class _JournalEntryScreenState extends ConsumerState<JournalEntryScreen> {
     final icon = mood == Mood.happy
         ? Icons.sentiment_very_satisfied
         : mood == Mood.neutral
-            ? Icons.sentiment_neutral
-            : Icons.sentiment_very_dissatisfied;
+        ? Icons.sentiment_neutral
+        : Icons.sentiment_very_dissatisfied;
     return Icon(icon, size: size, color: primaryColor);
   }
 
@@ -177,12 +187,7 @@ class _JournalEntryScreenState extends ConsumerState<JournalEntryScreen> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Journal entry'),
-        actions: [
-          TextButton(
-            onPressed: _saveEntry,
-            child: const Text('Save'),
-          ),
-        ],
+        actions: [TextButton(onPressed: _saveEntry, child: const Text('Save'))],
       ),
       body: SafeArea(
         child: Column(
@@ -336,7 +341,8 @@ class _JournalCanvasPainter extends CustomPainter {
         }
         continue;
       }
-      final path = Path()..moveTo(stroke.points.first.dx, stroke.points.first.dy);
+      final path = Path()
+        ..moveTo(stroke.points.first.dx, stroke.points.first.dy);
       for (var i = 1; i < stroke.points.length; i++) {
         final point = stroke.points[i];
         path.lineTo(point.dx, point.dy);
