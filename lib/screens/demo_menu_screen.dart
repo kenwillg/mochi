@@ -73,16 +73,18 @@ class _DemoEntry {
     required this.subtitle,
     this.builder,
     this.routeName,
+    this.arguments,
   });
 
   final String title;
   final String subtitle;
   final WidgetBuilder? builder;
   final String? routeName;
+  final Object? arguments;
 
   void navigate(BuildContext context) {
     if (routeName != null) {
-      Navigator.of(context).pushNamed(routeName!);
+      Navigator.of(context).pushNamed(routeName!, arguments: arguments);
       return;
     }
 
