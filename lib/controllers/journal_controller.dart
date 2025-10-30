@@ -1,18 +1,18 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../models/mood.dart';
+import 'package:mochi/models/mood.dart';
 
-class JournalDataNotifier extends StateNotifier<Map<DateTime, Mood?>> {
-  JournalDataNotifier() : super({});
+class JournalController extends StateNotifier<Map<DateTime, Mood?>> {
+  JournalController() : super({});
 
   void updateMood(DateTime date, Mood newMood) {
     state = {...state, date: newMood};
   }
 }
 
-final journalProvider =
-    StateNotifierProvider<JournalDataNotifier, Map<DateTime, Mood?>>((ref) {
-  return JournalDataNotifier();
+final journalControllerProvider =
+    StateNotifierProvider<JournalController, Map<DateTime, Mood?>>((ref) {
+  return JournalController();
 });
 
 final selectedDateProvider = StateProvider<DateTime>((ref) {

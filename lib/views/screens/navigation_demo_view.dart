@@ -5,8 +5,8 @@ import 'package:flutter/material.dart';
 /// * Named route navigation, including argument passing via [RouteSettings.arguments].
 /// * Returning data from child pages with [Navigator.pop] and surfacing the
 ///   results back in the parent UI.
-class NavigationDemoScreen extends StatefulWidget {
-  const NavigationDemoScreen({super.key});
+class NavigationDemoView extends StatefulWidget {
+  const NavigationDemoView({super.key});
 
   static const routeName = '/navigation-demo';
 
@@ -33,10 +33,10 @@ class NavigationDemoScreen extends StatefulWidget {
   }
 
   @override
-  State<NavigationDemoScreen> createState() => _NavigationDemoScreenState();
+  State<NavigationDemoView> createState() => _NavigationDemoViewState();
 }
 
-class _NavigationDemoScreenState extends State<NavigationDemoScreen> {
+class _NavigationDemoViewState extends State<NavigationDemoView> {
   String? _directNavigationResult;
   String? _namedRouteResult;
 

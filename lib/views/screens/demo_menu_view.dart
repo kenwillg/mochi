@@ -1,14 +1,14 @@
 import 'package:flutter/material.dart';
 
-import 'lifting_state_demo_screen.dart';
-import 'null_safety_demo_screen.dart';
-import 'set_state_demo_screen.dart';
-import 'stateless_stateful_demo_screen.dart';
-import 'navigation_demo_screen.dart';
-import 'rest_workflow/rest_workflow_screen.dart';
+import 'package:mochi/views/rest_workflow/rest_workflow_view.dart';
+import 'package:mochi/views/screens/lifting_state_demo_view.dart';
+import 'package:mochi/views/screens/navigation_demo_view.dart';
+import 'package:mochi/views/screens/null_safety_demo_view.dart';
+import 'package:mochi/views/screens/set_state_demo_view.dart';
+import 'package:mochi/views/screens/stateless_stateful_demo_view.dart';
 
-class DemoMenuScreen extends StatelessWidget {
-  const DemoMenuScreen({super.key});
+class DemoMenuView extends StatelessWidget {
+  const DemoMenuView({super.key});
 
   static const routeName = '/demos';
 
@@ -18,33 +18,33 @@ class DemoMenuScreen extends StatelessWidget {
       _DemoEntry(
         title: 'Stateless vs Stateful widgets',
         subtitle: 'Compare immutable and mutable widget lifecycles.',
-        builder: (_) => const StatelessStatefulDemoScreen(),
+        builder: (_) => const StatelessStatefulDemoView(),
       ),
       _DemoEntry(
         title: 'Understanding setState',
         subtitle: 'See how setState triggers rebuilds and responds to gestures.',
-        builder: (_) => const SetStateDemoScreen(),
+        builder: (_) => const SetStateDemoView(),
       ),
       _DemoEntry(
         title: 'Lifting State Up',
         subtitle: 'Share data between widgets by letting the parent own it.',
-        builder: (_) => const LiftingStateDemoScreen(),
+        builder: (_) => const LiftingStateDemoView(),
       ),
       _DemoEntry(
         title: 'Null Safety Best Practices',
         subtitle: 'Handle nullable data, validate forms, and overlay widgets safely.',
-        builder: (_) => const NullSafetyDemoScreen(),
+        builder: (_) => const NullSafetyDemoView(),
       ),
       _DemoEntry(
         title: 'Navigator push vs named routes',
         subtitle: 'See arguments passed forward and data returned on pop.',
-        routeName: NavigationDemoScreen.routeName,
+        routeName: NavigationDemoView.routeName,
       ),
       _DemoEntry(
         title: 'REST with Riverpod',
         subtitle:
             'Fetch, create, and update JSONPlaceholder posts via providers.',
-        routeName: RestWorkflowScreen.routeName,
+        routeName: RestWorkflowView.routeName,
       ),
     ];
 
@@ -73,18 +73,15 @@ class _DemoEntry {
     required this.subtitle,
     this.builder,
     this.routeName,
-    this.arguments,
   });
 
   final String title;
   final String subtitle;
   final WidgetBuilder? builder;
   final String? routeName;
-  final Object? arguments;
-
   void navigate(BuildContext context) {
     if (routeName != null) {
-      Navigator.of(context).pushNamed(routeName!, arguments: arguments);
+      Navigator.of(context).pushNamed(routeName!);
       return;
     }
 

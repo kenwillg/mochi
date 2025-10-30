@@ -1,23 +1,23 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../models/post.dart';
-import '../../providers/post_providers.dart';
+import 'package:mochi/controllers/post_controller.dart';
+import 'package:mochi/models/post.dart';
 
-class RestWorkflowScreen extends ConsumerWidget {
-  const RestWorkflowScreen({super.key});
+class RestWorkflowView extends ConsumerWidget {
+  const RestWorkflowView({super.key});
 
   static const routeName = '/rest-workflow';
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final postsAsync = ref.watch(postListControllerProvider);
+    final postsAsync = ref.watch(postControllerProvider);
     final posts = postsAsync.valueOrNull;
 
     if (posts == null && postsAsync.isLoading) {
-      return const Scaffold(
-        appBar: AppBar(title: Text('REST with Riverpod')),
-        body: Center(child: CircularProgressIndicator()),
+      return Scaffold(
+        appBar: AppBar(title: const Text('REST with Riverpod')),
+        body: const Center(child: CircularProgressIndicator()),
       );
     }
 
@@ -27,7 +27,7 @@ class RestWorkflowScreen extends ConsumerWidget {
         body: _ErrorState(
           error: postsAsync.error,
           onRetry: () =>
-              ref.read(postListControllerProvider.notifier).refresh(),
+              ref.read(postControllerProvider.notifier).refresh(),
         ),
       );
     }
@@ -38,7 +38,7 @@ class RestWorkflowScreen extends ConsumerWidget {
         children: [
           RefreshIndicator(
             onRefresh: () =>
-                ref.read(postListControllerProvider.notifier).refresh(),
+                ref.read(postControllerProvider.notifier).refresh(),
             child: ListView(
               padding: const EdgeInsets.all(16),
               children: [
@@ -144,7 +144,7 @@ class _PostComposerCardState extends ConsumerState<PostComposerCard> {
 
   @override
   Widget build(BuildContext context) {
-    final postsAsync = ref.watch(postListControllerProvider);
+    final postsAsync = ref.watch(postControllerProvider);
     final isLoading = postsAsync.isLoading;
 
     return Card(
@@ -276,7 +276,7 @@ class _PostComposerCardState extends ConsumerState<PostComposerCard> {
       return;
     }
 
-    final notifier = ref.read(postListControllerProvider.notifier);
+    final notifier = ref.read(postControllerProvider.notifier);
     final draft = PostDraft(
       userId: int.parse(_createUserIdController.text),
       title: _createTitleController.text,
@@ -294,7 +294,7 @@ class _PostComposerCardState extends ConsumerState<PostComposerCard> {
       return;
     }
 
-    final notifier = ref.read(postListControllerProvider.notifier);
+    final notifier = ref.read(postControllerProvider.notifier);
     final id = int.parse(_updateIdController.text);
     final draft = PostDraft(
       userId: 1,

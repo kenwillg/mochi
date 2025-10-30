@@ -3,9 +3,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
 
-import '../models/mood.dart';
-import '../providers/journal_provider.dart';
-import '../theme/app_theme.dart';
+import 'package:mochi/controllers/journal_controller.dart';
+import 'package:mochi/models/mood.dart';
+import 'package:mochi/views/theme/app_theme.dart';
 
 class DailyDetailsCard extends ConsumerWidget {
   const DailyDetailsCard({required this.date, super.key});
@@ -16,7 +16,7 @@ class DailyDetailsCard extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final dateKey = DateTime(date.year, date.month, date.day);
 
-    final journalData = ref.watch(journalProvider);
+    final journalData = ref.watch(journalControllerProvider);
     final selectedMood = journalData[dateKey];
     final isSaving = ref.watch(isSavingProvider);
     final formattedDate = DateFormat.yMMMMd().format(date);
@@ -52,7 +52,7 @@ class DailyDetailsCard extends ConsumerWidget {
                   onSelected: (isSelected) {
                     if (isSelected) {
                       ref
-                          .read(journalProvider.notifier)
+                          .read(journalControllerProvider.notifier)
                           .updateMood(dateKey, mood);
                     }
                   },

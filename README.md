@@ -62,22 +62,22 @@ Follow these steps to get your development machine ready for the curriculum:
 └── analysis_options.yaml     # Lints aligned with the course.
 ```
 
-Use `lib/` as the canonical place for new lesson modules. Additional folders such as `lib/services/` or `lib/widgets/` can be introduced in later lessons when topics require them.
+Use `lib/` as the canonical place for new lesson modules. The Flutter UI now follows an MVC-inspired layout with `lib/views/` housing widgets and screens, and `lib/controllers/` containing Riverpod state controllers. Additional folders such as `lib/services/` can be introduced in later lessons when topics require them.
 
 ## Curriculum Map
 
 This guide connects each topic in the syllabus to the corresponding code so learners can explore the implementation while studying the theory.
 
 ### Widgets & Layout
-- `lib/main.dart` → `MochiApp`, `MochiHomePage`, and `DailyDetailsCard` demonstrate stateless/stateful compositions, Scaffold layout, and custom widget building.
+- `lib/main.dart` → `MochiApp`, `MochiHomeView`, and `DailyDetailsCard` demonstrate stateless/stateful compositions, Scaffold layout, and custom widget building.
 - Explore the `TableCalendar` widget configuration to see third-party widget integration and builder callbacks.
 
 ### Navigation & Routing
-- `lib/main.dart` registers named routes (`MochiHomePage.routeName`, `DemoMenuScreen.routeName`, and `NavigationDemoScreen.routeName`) and wires `onGenerateRoute` so detail pages can decode typed arguments.
-- `lib/screens/navigation_demo_screen.dart` provides two flows: one uses `Navigator.push` with a constructor argument, the other uses `Navigator.pushNamed` with a `NamedRouteDetailsArgs` payload. Both routes call `Navigator.pop` with a string result that surfaces back in the parent UI.
+- `lib/main.dart` registers named routes (`MochiHomeView.routeName`, `DemoMenuView.routeName`, and `NavigationDemoView.routeName`) and wires `onGenerateRoute` so detail pages can decode typed arguments.
+- `lib/views/screens/navigation_demo_view.dart` provides two flows: one uses `Navigator.push` with a constructor argument, the other uses `Navigator.pushNamed` with a `NamedRouteDetailsArgs` payload. Both routes call `Navigator.pop` with a string result that surfaces back in the parent UI.
 
 ### State Management (Riverpod)
-- `JournalDataNotifier` and related providers (`journalProvider`, `selectedDateProvider`, `isSavingProvider`) show how global state flows through Riverpod.
+- `JournalController` and related providers (`journalControllerProvider`, `selectedDateProvider`, `isSavingProvider`) show how global state flows through Riverpod.
 - Look at the `ConsumerWidget` implementations to understand how widgets read and react to provider changes.
 
 ### Theming & Styling

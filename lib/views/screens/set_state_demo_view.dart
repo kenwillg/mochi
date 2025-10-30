@@ -1,16 +1,16 @@
 import 'package:flutter/material.dart';
 
-import '../widgets/demo_section.dart';
-import '../widgets/demo_widgets.dart';
+import 'package:mochi/views/widgets/demo_section.dart';
+import 'package:mochi/views/widgets/demo_widgets.dart';
 
-class SetStateDemoScreen extends StatefulWidget {
-  const SetStateDemoScreen({super.key});
+class SetStateDemoView extends StatefulWidget {
+  const SetStateDemoView({super.key});
 
   @override
-  State<SetStateDemoScreen> createState() => _SetStateDemoScreenState();
+  State<SetStateDemoView> createState() => _SetStateDemoViewState();
 }
 
-class _SetStateDemoScreenState extends State<SetStateDemoScreen> {
+class _SetStateDemoViewState extends State<SetStateDemoView> {
   double _fontScale = 18;
 
   @override

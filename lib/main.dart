@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import 'screens/demo_menu_screen.dart';
-import 'screens/mochi_home_page.dart';
-import 'screens/navigation_demo_screen.dart';
-import 'screens/rest_workflow/rest_workflow_screen.dart';
-import 'theme/app_theme.dart';
+import 'package:mochi/views/rest_workflow/rest_workflow_view.dart';
+import 'package:mochi/views/screens/demo_menu_view.dart';
+import 'package:mochi/views/screens/mochi_home_view.dart';
+import 'package:mochi/views/screens/navigation_demo_view.dart';
+import 'package:mochi/views/theme/app_theme.dart';
 
 void main() {
   runApp(const ProviderScope(child: MochiApp()));
@@ -20,14 +20,14 @@ class MochiApp extends StatelessWidget {
       debugShowCheckedModeBanner: false,
       title: 'Mochi',
       theme: AppTheme.lightTheme(),
-      initialRoute: MochiHomePage.routeName,
+      initialRoute: MochiHomeView.routeName,
       routes: {
-        MochiHomePage.routeName: (context) => const MochiHomePage(),
-        DemoMenuScreen.routeName: (context) => const DemoMenuScreen(),
-        NavigationDemoScreen.routeName: (context) => const NavigationDemoScreen(),
-        RestWorkflowScreen.routeName: (context) => const RestWorkflowScreen(),
+        MochiHomeView.routeName: (context) => const MochiHomeView(),
+        DemoMenuView.routeName: (context) => const DemoMenuView(),
+        NavigationDemoView.routeName: (context) => const NavigationDemoView(),
+        RestWorkflowView.routeName: (context) => const RestWorkflowView(),
       },
-      onGenerateRoute: NavigationDemoScreen.onGenerateRoute,
+      onGenerateRoute: NavigationDemoView.onGenerateRoute,
     );
   }
 }

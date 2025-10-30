@@ -3,21 +3,20 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:table_calendar/table_calendar.dart';
 
-import '../providers/journal_provider.dart';
-import '../theme/app_theme.dart';
-import '../widgets/daily_details_card.dart';
+import 'package:mochi/controllers/journal_controller.dart';
+import 'package:mochi/views/screens/demo_menu_view.dart';
+import 'package:mochi/views/theme/app_theme.dart';
+import 'package:mochi/views/widgets/daily_details_card.dart';
 
-import 'demo_menu_screen.dart';
-
-class MochiHomePage extends ConsumerWidget {
-  const MochiHomePage({super.key});
+class MochiHomeView extends ConsumerWidget {
+  const MochiHomeView({super.key});
 
   static const routeName = '/';
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final selectedDate = ref.watch(selectedDateProvider);
-    final journalData = ref.watch(journalProvider);
+    final journalData = ref.watch(journalControllerProvider);
 
     return Scaffold(
       appBar: AppBar(
@@ -26,7 +25,7 @@ class MochiHomePage extends ConsumerWidget {
           icon: const Icon(Icons.menu_book_rounded),
           tooltip: 'Open learning demos',
           onPressed: () {
-            Navigator.of(context).pushNamed(DemoMenuScreen.routeName);
+            Navigator.of(context).pushNamed(DemoMenuView.routeName);
           },
         ),
       ),

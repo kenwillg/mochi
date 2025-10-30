@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 
-import '../widgets/demo_section.dart';
-import '../widgets/demo_widgets.dart';
+import 'package:mochi/views/widgets/demo_section.dart';
+import 'package:mochi/views/widgets/demo_widgets.dart';
 
-class StatelessStatefulDemoScreen extends StatelessWidget {
-  const StatelessStatefulDemoScreen({super.key});
+class StatelessStatefulDemoView extends StatelessWidget {
+  const StatelessStatefulDemoView({super.key});
 
   @override
   Widget build(BuildContext context) {

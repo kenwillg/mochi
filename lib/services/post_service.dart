@@ -2,7 +2,7 @@ import 'dart:convert';
 
 import 'package:http/http.dart' as http;
 
-import '../models/post.dart';
+import 'package:mochi/models/post.dart';
 
 /// Service that performs network calls to the JSONPlaceholder REST API.
 class PostService {

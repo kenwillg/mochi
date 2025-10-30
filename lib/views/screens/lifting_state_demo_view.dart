@@ -1,16 +1,16 @@
 import 'package:flutter/material.dart';
 
-import '../widgets/demo_section.dart';
-import '../widgets/demo_widgets.dart';
+import 'package:mochi/views/widgets/demo_section.dart';
+import 'package:mochi/views/widgets/demo_widgets.dart';
 
-class LiftingStateDemoScreen extends StatefulWidget {
-  const LiftingStateDemoScreen({super.key});
+class LiftingStateDemoView extends StatefulWidget {
+  const LiftingStateDemoView({super.key});
 
   @override
-  State<LiftingStateDemoScreen> createState() => _LiftingStateDemoScreenState();
+  State<LiftingStateDemoView> createState() => _LiftingStateDemoViewState();
 }
 
-class _LiftingStateDemoScreenState extends State<LiftingStateDemoScreen> {
+class _LiftingStateDemoViewState extends State<LiftingStateDemoView> {
   int? _selectedIndex;
 
   @override

@@ -1,8 +1,8 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:http/http.dart' as http;
 
-import '../models/post.dart';
-import '../services/post_service.dart';
+import 'package:mochi/models/post.dart';
+import 'package:mochi/services/post_service.dart';
 
 final httpClientProvider = Provider<http.Client>((ref) {
   final client = http.Client();
@@ -15,12 +15,12 @@ final postServiceProvider = Provider<PostService>((ref) {
   return PostService(client: client);
 });
 
-final postListControllerProvider =
-    AutoDisposeAsyncNotifierProvider<PostListController, List<Post>>(
-  PostListController.new,
+final postControllerProvider =
+    AutoDisposeAsyncNotifierProvider<PostController, List<Post>>(
+  PostController.new,
 );
 
-class PostListController extends AutoDisposeAsyncNotifier<List<Post>> {
+class PostController extends AutoDisposeAsyncNotifier<List<Post>> {
   PostService get _service => ref.read(postServiceProvider);
 
   @override
