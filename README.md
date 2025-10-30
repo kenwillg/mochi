@@ -138,4 +138,5 @@ State management utama ditangani oleh Riverpod dan terpusat di `lib/providers/jo
 ## Next Steps / Future Work
 
 * **Implement SharedPreferences:** Gunakan `SharedPreferences` untuk menyimpan data simpel, seperti nama pengguna atau preferensi tema (dark/light mode).
-* **Weather API:** Integrasikan `WeatherService` ke dalam UI, mungkin di `AppBar` atau `DailyDetailsCard` untuk menunjukkan cuaca pada hari itu.
+* **Tugas 6 (Unit Testing):** Melakukan Unit testing untuk memastikan seluruh fungsionalitas aplikasi bekerja.
+* **SQLite:** Integrasikan `WeatherService` ke dalam UI, mungkin di `AppBar` atau `DailyDetailsCard` untuk menunjukkan cuaca pada hari itu.
