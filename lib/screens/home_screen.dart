@@ -7,6 +7,7 @@ import '../models/journal_entry.dart';
 import '../providers/journal_providers.dart';
 import '../utils/constants.dart';
 import '../widgets/daily_details_card.dart';
+import '../widgets/weather_icon_button.dart';
 import 'demo_menu_screen.dart';
 
 // --- CALENDAR PAGE ---
@@ -31,6 +32,9 @@ class MochiHomePage extends ConsumerWidget {
             Navigator.of(context).pushNamed(DemoMenuScreen.routeName);
           },
         ),
+        actions: const [
+          WeatherIconButton(),
+        ],
       ),
       // --- Floating Action Button for adding entries ---
       floatingActionButton: FloatingActionButton(
