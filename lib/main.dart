@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import 'screens/demo_menu_screen.dart';
-import 'screens/mochi_home_page.dart';
-import 'screens/navigation_demo_screen.dart';
-import 'screens/rest_workflow/rest_workflow_screen.dart';
+import 'views/demo_menu_screen.dart';
+import 'views/mochi_home_page.dart';
+import 'views/navigation_demo_screen.dart';
+import 'views/rest_workflow/rest_workflow_screen.dart';
 import 'theme/app_theme.dart';
 
 void main() {

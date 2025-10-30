@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../models/post.dart';
-import '../../providers/post_providers.dart';
+import '../../controllers/post_controller.dart';
 
 class RestWorkflowScreen extends ConsumerWidget {
   const RestWorkflowScreen({super.key});
@@ -15,9 +15,9 @@ class RestWorkflowScreen extends ConsumerWidget {
     final posts = postsAsync.valueOrNull;
 
     if (posts == null && postsAsync.isLoading) {
-      return const Scaffold(
-        appBar: AppBar(title: Text('REST with Riverpod')),
-        body: Center(child: CircularProgressIndicator()),
+      return Scaffold(
+        appBar: AppBar(title: const Text('REST with Riverpod')),
+        body: const Center(child: CircularProgressIndicator()),
       );
     }
 

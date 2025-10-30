@@ -3,7 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:table_calendar/table_calendar.dart';
 
-import '../providers/journal_provider.dart';
+import '../controllers/journal_controller.dart';
 import '../theme/app_theme.dart';
 import '../widgets/daily_details_card.dart';
 
