@@ -40,8 +40,8 @@ class WeatherInfo {
     final forecastDayList = forecast?['forecastday'] as List<dynamic>?;
     final firstForecastDay =
         forecastDayList != null && forecastDayList.isNotEmpty
-            ? forecastDayList.first as Map<String, dynamic>
-            : null;
+        ? forecastDayList.first as Map<String, dynamic>
+        : null;
     final dayDetails =
         firstForecastDay?['day'] as Map<String, dynamic>? ?? const {};
 
@@ -56,8 +56,8 @@ class WeatherInfo {
       windSpeedKph: _toDouble(current?['wind_kph']),
       chanceOfRain: _toInt(dayDetails['daily_chance_of_rain']),
       uvIndex: _toDouble(current?['uv']),
-      conditionText: (current?['condition']?['text'] as String?)?.trim() ??
-          'N/A',
+      conditionText:
+          (current?['condition']?['text'] as String?)?.trim() ?? 'N/A',
       conditionIconUrl: _normaliseIconUrl(
         current?['condition']?['icon'] as String?,
       ),
@@ -73,8 +73,10 @@ class WeatherInfo {
       return DateTime.tryParse(value) ?? DateTime.now();
     }
     if (value is int) {
-      return DateTime.fromMillisecondsSinceEpoch(value * 1000, isUtc: true)
-          .toLocal();
+      return DateTime.fromMillisecondsSinceEpoch(
+        value * 1000,
+        isUtc: true,
+      ).toLocal();
     }
     return DateTime.now();
   }
