@@ -1,15 +1,74 @@
-import 'package:flutter_riverpod/legacy.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter/foundation.dart';
 
 import '../models/journal_entry.dart';
 import '../models/mood.dart';
+import '../services/journal_database_service.dart';
+import '../services/preferences_service.dart';
 
 // --- Providers (Our App's "State") ---
 
 DateTime _normalize(DateTime date) => DateTime(date.year, date.month, date.day);
 
+// Provider for database service (accessible across files)
+final databaseServiceProvider = Provider<JournalDatabaseService>((ref) {
+  return JournalDatabaseService();
+});
+
+// Provider for preferences service (accessible across files)
+final preferencesServiceProvider = Provider<PreferencesService>((ref) {
+  return PreferencesService();
+});
+
 // 1. THE "BRAIN" - This is our app's central database for entries.
+// Now with SQLite persistence and debugging support
 class JournalDataNotifier extends StateNotifier<Map<DateTime, JournalEntry>> {
-  JournalDataNotifier() : super({});
+  JournalDataNotifier(this._databaseService) : super({}) {
+    _loadFromDatabase();
+  }
+
+  final JournalDatabaseService _databaseService;
+  bool _isLoading = false;
+
+  /// Load all entries from database on initialization
+  Future<void> _loadFromDatabase() async {
+    if (_isLoading) return;
+    _isLoading = true;
+
+    try {
+      if (kDebugMode) {
+        debugPrint('[JournalProvider] Loading entries from database...');
+      }
+
+      final entries = await _databaseService.loadAllEntries();
+      state = entries;
+
+      if (kDebugMode) {
+        debugPrint('[JournalProvider] Loaded ${entries.length} entries from database');
+      }
+    } catch (e) {
+      if (kDebugMode) {
+        debugPrint('[JournalProvider] Error loading from database: $e');
+      }
+    } finally {
+      _isLoading = false;
+    }
+  }
+
+  /// Save entry to database
+  Future<void> _saveToDatabase(DateTime date, JournalEntry entry) async {
+    try {
+      await _databaseService.saveEntry(date, entry);
+      if (kDebugMode) {
+        debugPrint('[JournalProvider] Saved entry to database for date: ${_normalize(date)}');
+      }
+    } catch (e) {
+      if (kDebugMode) {
+        debugPrint('[JournalProvider] Error saving to database: $e');
+      }
+      // Don't rethrow - we still want the state to update even if save fails
+    }
+  }
 
   JournalEntry entryFor(DateTime date) {
     final normalized = _normalize(date);
@@ -19,7 +78,12 @@ class JournalDataNotifier extends StateNotifier<Map<DateTime, JournalEntry>> {
   void updateMood(DateTime date, Mood newMood) {
     final normalized = _normalize(date);
     final current = entryFor(normalized);
-    state = {...state, normalized: current.copyWith(mood: newMood)};
+    final updated = current.copyWith(mood: newMood);
+    
+    state = {...state, normalized: updated};
+    
+    // Persist to database
+    _saveToDatabase(normalized, updated);
   }
 
   void updateCanvas(
@@ -29,19 +93,32 @@ class JournalDataNotifier extends StateNotifier<Map<DateTime, JournalEntry>> {
   }) {
     final normalized = _normalize(date);
     final current = entryFor(normalized);
+    final updated = current.copyWith(
+      strokes: strokes ?? current.strokes,
+      stickers: stickers ?? current.stickers,
+    );
+    
     state = {
       ...state,
-      normalized: current.copyWith(
-        strokes: strokes ?? current.strokes,
-        stickers: stickers ?? current.stickers,
-      ),
+      normalized: updated,
     };
+    
+    // Persist to database
+    _saveToDatabase(normalized, updated);
+  }
+
+  /// Manually reload from database (useful for debugging)
+  Future<void> reloadFromDatabase() async {
+    await _loadFromDatabase();
   }
 }
 
 final journalProvider =
     StateNotifierProvider<JournalDataNotifier, Map<DateTime, JournalEntry>>(
-      (ref) => JournalDataNotifier(),
+      (ref) {
+        final databaseService = ref.watch(databaseServiceProvider);
+        return JournalDataNotifier(databaseService);
+      },
     );
 
 // 2. Holds the currently selected day on the calendar.
