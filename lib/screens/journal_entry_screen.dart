@@ -134,21 +134,6 @@ class _JournalEntryScreenState extends ConsumerState<JournalEntryScreen> {
     });
   }
 
-  void _onScaleStart(ScaleStartDetails details) {
-    if (_selectedStickerIndex == null) return;
-    // Store initial size for scaling
-  }
-
-  void _onScaleUpdate(ScaleUpdateDetails details) {
-    if (_selectedStickerIndex == null) return;
-    setState(() {
-      final index = _selectedStickerIndex!;
-      final sticker = _stickers[index];
-      final newSize = (sticker.size * details.scale).clamp(40.0, 200.0);
-      _stickers[index] = sticker.copyWith(size: newSize);
-    });
-  }
-
   void _addSticker(Mood mood) {
     const defaultSize = 72.0;
     final renderBox =
@@ -615,8 +600,6 @@ class _JournalEntryScreenState extends ConsumerState<JournalEntryScreen> {
                 onPanStart: _onPanStart,
                 onPanUpdate: _onPanUpdate,
                 onPanEnd: _onPanEnd,
-                onScaleStart: _onScaleStart,
-                onScaleUpdate: _onScaleUpdate,
                 onTapDown: _onCanvasTap,
                 child: Container(
                   key: _canvasKey,
