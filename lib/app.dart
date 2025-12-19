@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
+import 'screens/comprehensive_demo_screen.dart';
 import 'screens/demo_menu_screen.dart';
 import 'screens/home_screen.dart';
 import 'screens/journal_entry_screen.dart';
 import 'screens/navigation_demo_screen.dart';
+import 'screens/stats_screen.dart';
 import 'utils/constants.dart';
 
 class MochiApp extends StatelessWidget {
@@ -42,6 +44,8 @@ class MochiApp extends StatelessWidget {
         MochiHomePage.routeName: (context) => const MochiHomePage(),
         DemoMenuScreen.routeName: (context) => const DemoMenuScreen(),
         NavigationDemoScreen.routeName: (context) => const NavigationDemoScreen(),
+        StatsScreen.routeName: (context) => const StatsScreen(),
+        ComprehensiveDemoScreen.routeName: (context) => const ComprehensiveDemoScreen(),
       },
       onGenerateRoute: (settings) {
         final journalRoute = _handleJournalEntryRoute(settings);

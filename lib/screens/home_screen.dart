@@ -4,12 +4,14 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:table_calendar/table_calendar.dart';
 
 import '../models/journal_entry.dart';
+import '../models/mood.dart';
 import '../providers/journal_providers.dart';
 import '../utils/constants.dart';
 import '../widgets/daily_details_card.dart';
 import '../widgets/weather_icon_button.dart';
 import 'demo_menu_screen.dart';
 import 'journal_entry_screen.dart';
+import 'stats_screen.dart';
 
 // --- CALENDAR PAGE ---
 class MochiHomePage extends ConsumerStatefulWidget {
@@ -24,6 +26,42 @@ class MochiHomePage extends ConsumerStatefulWidget {
 class _MochiHomePageState extends ConsumerState<MochiHomePage> {
   DateTime? _lastTappedDay;
   DateTime? _lastTapTimestamp;
+  int _currentIndex = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    // Initialize mock data after first frame
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _initializeMockData();
+    });
+  }
+
+  void _initializeMockData() {
+    final now = DateTime.now();
+    final journalData = ref.read(journalProvider);
+    
+    // Only add mock data if we have less than 5 entries (to avoid overwriting user data)
+    if (journalData.length >= 5) return;
+    
+    final notifier = ref.read(journalProvider.notifier);
+    
+    // Add mock data for the last 30 days
+    for (int i = 1; i <= 30; i++) {
+      final date = now.subtract(Duration(days: i));
+      final normalizedDate = DateTime(date.year, date.month, date.day);
+      
+      // Skip if entry already exists
+      if (journalData[normalizedDate] != null) continue;
+      
+      // Random mood
+      final moods = [Mood.happy, Mood.neutral, Mood.sad];
+      final randomMood = moods[i % 3];
+      
+      // Create entry with mood
+      notifier.updateMood(normalizedDate, randomMood);
+    }
+  }
 
   Future<void> _openEntryDialog(DateTime date) async {
     final bool? entryWasSaved = await showDialog<bool>(
@@ -174,6 +212,15 @@ class _MochiHomePageState extends ConsumerState<MochiHomePage> {
         backgroundColor: Colors.white,
         selectedItemColor: primaryColor,
         unselectedItemColor: Colors.grey.shade400,
+        currentIndex: _currentIndex,
+        onTap: (index) {
+          setState(() {
+            _currentIndex = index;
+          });
+          if (index == 1) {
+            Navigator.of(context).pushNamed(StatsScreen.routeName);
+          }
+        },
         items: const [
           BottomNavigationBarItem(
             icon: Icon(Icons.calendar_today_rounded),

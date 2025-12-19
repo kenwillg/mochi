@@ -5,6 +5,7 @@ import 'null_safety_demo_screen.dart';
 import 'set_state_demo_screen.dart';
 import 'stateless_stateful_demo_screen.dart';
 import 'navigation_demo_screen.dart';
+import 'comprehensive_demo_screen.dart';
 
 class DemoMenuScreen extends StatelessWidget {
   const DemoMenuScreen({super.key});
@@ -40,6 +41,11 @@ class DemoMenuScreen extends StatelessWidget {
         title: 'Navigator push vs named routes',
         subtitle: 'See arguments passed forward and data returned on pop.',
         routeName: NavigationDemoScreen.routeName,
+      ),
+      _DemoEntry(
+        title: 'Comprehensive Flutter Demo',
+        subtitle: 'All Tugas 4 concepts: Variables, Functions, OOP, Widgets, HTTP, and more!',
+        routeName: ComprehensiveDemoScreen.routeName,
       ),
     ];
 
