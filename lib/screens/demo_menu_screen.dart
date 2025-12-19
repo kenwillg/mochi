@@ -21,7 +21,8 @@ class DemoMenuScreen extends StatelessWidget {
       ),
       _DemoEntry(
         title: 'Understanding setState',
-        subtitle: 'See how setState triggers rebuilds and responds to gestures.',
+        subtitle:
+            'See how setState triggers rebuilds and responds to gestures.',
         builder: (_) => const SetStateDemoScreen(),
       ),
       _DemoEntry(
@@ -31,7 +32,8 @@ class DemoMenuScreen extends StatelessWidget {
       ),
       _DemoEntry(
         title: 'Null Safety Best Practices',
-        subtitle: 'Handle nullable data, validate forms, and overlay widgets safely.',
+        subtitle:
+            'Handle nullable data, validate forms, and overlay widgets safely.',
         builder: (_) => const NullSafetyDemoScreen(),
       ),
       _DemoEntry(
@@ -66,7 +68,6 @@ class _DemoEntry {
     required this.subtitle,
     this.builder,
     this.routeName,
-    this.arguments,
   });
 
   final String title;
@@ -83,9 +84,7 @@ class _DemoEntry {
 
     final builder = this.builder;
     if (builder != null) {
-      Navigator.of(context).push(
-        MaterialPageRoute(builder: builder),
-      );
+      Navigator.of(context).push(MaterialPageRoute(builder: builder));
     }
   }
 }

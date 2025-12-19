@@ -314,8 +314,8 @@ class _JournalEntryScreenState extends ConsumerState<JournalEntryScreen> {
       return position;
     }
     final size = renderBox.size;
-    final clampedDx = position.dx.clamp(0.0, size.width) as double;
-    final clampedDy = position.dy.clamp(0.0, size.height) as double;
+    final clampedDx = position.dx.clamp(0.0, size.width);
+    final clampedDy = position.dy.clamp(0.0, size.height);
     return Offset(clampedDx, clampedDy);
   }
 }
