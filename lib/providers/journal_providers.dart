@@ -3,16 +3,18 @@ import 'package:flutter/foundation.dart';
 
 import '../models/journal_entry.dart';
 import '../models/mood.dart';
-import '../services/journal_database_service.dart';
+import '../services/journal_storage_factory.dart';
+import '../services/journal_storage_service.dart';
 import '../services/preferences_service.dart';
 
 // --- Providers (Our App's "State") ---
 
 DateTime _normalize(DateTime date) => DateTime(date.year, date.month, date.day);
 
-// Provider for database service (accessible across files)
-final databaseServiceProvider = Provider<JournalDatabaseService>((ref) {
-  return JournalDatabaseService();
+// Provider for storage service (accessible across files)
+// Automatically uses SQLite on mobile/desktop, SharedPreferences on web
+final storageServiceProvider = Provider<JournalStorageService>((ref) {
+  return JournalStorageFactory.create();
 });
 
 // Provider for preferences service (accessible across files)
@@ -21,10 +23,9 @@ final preferencesServiceProvider = Provider<PreferencesService>((ref) {
 });
 
 // 1. THE "BRAIN" - This is our app's central database for entries.
-// Now with SQLite persistence and debugging support
+// Now with platform-agnostic persistence (SQLite on mobile/desktop, SharedPreferences on web)
 class JournalDataNotifier extends Notifier<Map<DateTime, JournalEntry>> {
-  JournalDatabaseService get _databaseService =>
-      ref.read(databaseServiceProvider);
+  JournalStorageService get _storageService => ref.read(storageServiceProvider);
   bool _isLoading = false;
 
   @override
@@ -44,7 +45,7 @@ class JournalDataNotifier extends Notifier<Map<DateTime, JournalEntry>> {
         debugPrint('[JournalProvider] Loading entries from database...');
       }
 
-      final entries = await _databaseService.loadAllEntries();
+      final entries = await _storageService.loadAllEntries();
       state = entries;
 
       if (kDebugMode) {
@@ -64,7 +65,7 @@ class JournalDataNotifier extends Notifier<Map<DateTime, JournalEntry>> {
   /// Save entry to database
   Future<void> _saveToDatabase(DateTime date, JournalEntry entry) async {
     try {
-      await _databaseService.saveEntry(date, entry);
+      await _storageService.saveEntry(date, entry);
       if (kDebugMode) {
         debugPrint(
           '[JournalProvider] Saved entry to database for date: ${_normalize(date)}',

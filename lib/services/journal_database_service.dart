@@ -7,10 +7,11 @@ import 'package:path/path.dart';
 
 import '../models/journal_entry.dart';
 import '../models/mood.dart';
+import 'journal_storage_service.dart';
 
 /// Service for managing journal entries in SQLite database
 /// Provides debugging capabilities with detailed logging
-class JournalDatabaseService {
+class JournalDatabaseService implements JournalStorageService {
   static const String _databaseName = 'journal.db';
   static const int _databaseVersion = 1;
   static const String _tableName = 'journal_entries';
@@ -66,12 +67,15 @@ class JournalDatabaseService {
   /// Handle database upgrades
   Future<void> _onUpgrade(Database db, int oldVersion, int newVersion) async {
     if (kDebugMode) {
-      debugPrint('[JournalDatabase] Upgrading database from version $oldVersion to $newVersion');
+      debugPrint(
+        '[JournalDatabase] Upgrading database from version $oldVersion to $newVersion',
+      );
     }
     // Add migration logic here if needed
   }
 
   /// Save journal entry to database
+  @override
   Future<void> saveEntry(DateTime date, JournalEntry entry) async {
     try {
       final db = await database;
@@ -80,30 +84,36 @@ class JournalDatabaseService {
 
       final moodStr = entry.mood?.name;
       final strokesJson = jsonEncode(
-        entry.strokes.map((s) => {
-          'points': s.points.map((p) => {'dx': p.dx, 'dy': p.dy}).toList(),
-        }).toList(),
+        entry.strokes
+            .map(
+              (s) => {
+                'points': s.points
+                    .map((p) => {'dx': p.dx, 'dy': p.dy})
+                    .toList(),
+              },
+            )
+            .toList(),
       );
       final stickersJson = jsonEncode(
-        entry.stickers.map((s) => {
-          'mood': s.mood.name,
-          'position': {'dx': s.position.dx, 'dy': s.position.dy},
-          'size': s.size,
-        }).toList(),
+        entry.stickers
+            .map(
+              (s) => {
+                'mood': s.mood.name,
+                'position': {'dx': s.position.dx, 'dy': s.position.dy},
+                'size': s.size,
+              },
+            )
+            .toList(),
       );
 
-      await db.insert(
-        _tableName,
-        {
-          'date': dateKey,
-          'mood': moodStr,
-          'strokes': strokesJson,
-          'stickers': stickersJson,
-          'created_at': now,
-          'updated_at': now,
-        },
-        conflictAlgorithm: ConflictAlgorithm.replace,
-      );
+      await db.insert(_tableName, {
+        'date': dateKey,
+        'mood': moodStr,
+        'strokes': strokesJson,
+        'stickers': stickersJson,
+        'created_at': now,
+        'updated_at': now,
+      }, conflictAlgorithm: ConflictAlgorithm.replace);
 
       if (kDebugMode) {
         debugPrint('[JournalDatabase] Saved entry for date: $dateKey');
@@ -117,6 +127,7 @@ class JournalDatabaseService {
   }
 
   /// Load journal entry from database
+  @override
   Future<JournalEntry?> loadEntry(DateTime date) async {
     try {
       final db = await database;
@@ -180,11 +191,7 @@ class JournalDatabaseService {
         debugPrint('[JournalDatabase] Loaded entry for date: $dateKey');
       }
 
-      return JournalEntry(
-        mood: mood,
-        strokes: strokes,
-        stickers: stickers,
-      );
+      return JournalEntry(mood: mood, strokes: strokes, stickers: stickers);
     } catch (e) {
       if (kDebugMode) {
         debugPrint('[JournalDatabase] Error loading entry: $e');
@@ -194,6 +201,7 @@ class JournalDatabaseService {
   }
 
   /// Load all journal entries
+  @override
   Future<Map<DateTime, JournalEntry>> loadAllEntries() async {
     try {
       final db = await database;
@@ -267,16 +275,13 @@ class JournalDatabaseService {
   }
 
   /// Delete journal entry
+  @override
   Future<void> deleteEntry(DateTime date) async {
     try {
       final db = await database;
       final dateKey = _normalizeDate(date).toIso8601String().split('T')[0];
 
-      await db.delete(
-        _tableName,
-        where: 'date = ?',
-        whereArgs: [dateKey],
-      );
+      await db.delete(_tableName, where: 'date = ?', whereArgs: [dateKey]);
 
       if (kDebugMode) {
         debugPrint('[JournalDatabase] Deleted entry for date: $dateKey');
@@ -303,4 +308,3 @@ class JournalDatabaseService {
   DateTime _normalizeDate(DateTime date) =>
       DateTime(date.year, date.month, date.day);
 }
-
