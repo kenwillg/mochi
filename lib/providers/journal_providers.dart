@@ -22,13 +22,17 @@ final preferencesServiceProvider = Provider<PreferencesService>((ref) {
 
 // 1. THE "BRAIN" - This is our app's central database for entries.
 // Now with SQLite persistence and debugging support
-class JournalDataNotifier extends StateNotifier<Map<DateTime, JournalEntry>> {
-  JournalDataNotifier(this._databaseService) : super({}) {
-    _loadFromDatabase();
-  }
-
-  final JournalDatabaseService _databaseService;
+class JournalDataNotifier extends Notifier<Map<DateTime, JournalEntry>> {
+  JournalDatabaseService get _databaseService =>
+      ref.read(databaseServiceProvider);
   bool _isLoading = false;
+
+  @override
+  Map<DateTime, JournalEntry> build() {
+    // Load from database on initialization
+    _loadFromDatabase();
+    return {};
+  }
 
   /// Load all entries from database on initialization
   Future<void> _loadFromDatabase() async {
@@ -44,7 +48,9 @@ class JournalDataNotifier extends StateNotifier<Map<DateTime, JournalEntry>> {
       state = entries;
 
       if (kDebugMode) {
-        debugPrint('[JournalProvider] Loaded ${entries.length} entries from database');
+        debugPrint(
+          '[JournalProvider] Loaded ${entries.length} entries from database',
+        );
       }
     } catch (e) {
       if (kDebugMode) {
@@ -60,7 +66,9 @@ class JournalDataNotifier extends StateNotifier<Map<DateTime, JournalEntry>> {
     try {
       await _databaseService.saveEntry(date, entry);
       if (kDebugMode) {
-        debugPrint('[JournalProvider] Saved entry to database for date: ${_normalize(date)}');
+        debugPrint(
+          '[JournalProvider] Saved entry to database for date: ${_normalize(date)}',
+        );
       }
     } catch (e) {
       if (kDebugMode) {
@@ -79,9 +87,9 @@ class JournalDataNotifier extends StateNotifier<Map<DateTime, JournalEntry>> {
     final normalized = _normalize(date);
     final current = entryFor(normalized);
     final updated = current.copyWith(mood: newMood);
-    
+
     state = {...state, normalized: updated};
-    
+
     // Persist to database
     _saveToDatabase(normalized, updated);
   }
@@ -97,12 +105,9 @@ class JournalDataNotifier extends StateNotifier<Map<DateTime, JournalEntry>> {
       strokes: strokes ?? current.strokes,
       stickers: stickers ?? current.stickers,
     );
-    
-    state = {
-      ...state,
-      normalized: updated,
-    };
-    
+
+    state = {...state, normalized: updated};
+
     // Persist to database
     _saveToDatabase(normalized, updated);
   }
@@ -114,17 +119,34 @@ class JournalDataNotifier extends StateNotifier<Map<DateTime, JournalEntry>> {
 }
 
 final journalProvider =
-    StateNotifierProvider<JournalDataNotifier, Map<DateTime, JournalEntry>>(
-      (ref) {
-        final databaseService = ref.watch(databaseServiceProvider);
-        return JournalDataNotifier(databaseService);
-      },
+    NotifierProvider<JournalDataNotifier, Map<DateTime, JournalEntry>>(
+      JournalDataNotifier.new,
     );
 
 // 2. Holds the currently selected day on the calendar.
-final selectedDateProvider = StateProvider<DateTime>((ref) {
-  return DateTime.now();
-});
+class SelectedDateNotifier extends Notifier<DateTime> {
+  @override
+  DateTime build() => DateTime.now();
+
+  void setDate(DateTime date) {
+    state = date;
+  }
+}
+
+final selectedDateProvider = NotifierProvider<SelectedDateNotifier, DateTime>(
+  SelectedDateNotifier.new,
+);
 
 // 3. Provider to handle the loading spinner state.
-final isSavingProvider = StateProvider<bool>((ref) => false);
+class IsSavingNotifier extends Notifier<bool> {
+  @override
+  bool build() => false;
+
+  void setSaving(bool value) {
+    state = value;
+  }
+}
+
+final isSavingProvider = NotifierProvider<IsSavingNotifier, bool>(
+  IsSavingNotifier.new,
+);

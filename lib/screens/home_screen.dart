@@ -81,9 +81,7 @@ class _MochiHomePageState extends ConsumerState<MochiHomePage> {
             Navigator.of(context).pushNamed(DemoMenuScreen.routeName);
           },
         ),
-        actions: const [
-          WeatherIconButton(),
-        ],
+        actions: const [WeatherIconButton()],
       ),
       // --- Floating Action Button for adding entries ---
       floatingActionButton: FloatingActionButton(
@@ -100,22 +98,25 @@ class _MochiHomePageState extends ConsumerState<MochiHomePage> {
             focusedDay: selectedDate,
             selectedDayPredicate: (day) => isSameDay(selectedDate, day),
             onDaySelected: (newSelectedDay, newFocusedDay) async {
-              ref.read(selectedDateProvider.notifier).state = newSelectedDay;
+              ref.read(selectedDateProvider.notifier).setDate(newSelectedDay);
 
               final now = DateTime.now();
               final isDoubleTap =
                   _lastTappedDay != null &&
-                      isSameDay(_lastTappedDay, newSelectedDay) &&
-                      _lastTapTimestamp != null &&
-                      now.difference(_lastTapTimestamp!) <
-                          const Duration(milliseconds: 500);
+                  isSameDay(_lastTappedDay, newSelectedDay) &&
+                  _lastTapTimestamp != null &&
+                  now.difference(_lastTapTimestamp!) <
+                      const Duration(milliseconds: 500);
 
               _lastTappedDay = newSelectedDay;
               _lastTapTimestamp = now;
 
               if (isDoubleTap) {
-                final dateKey =
-                    DateTime(newSelectedDay.year, newSelectedDay.month, newSelectedDay.day);
+                final dateKey = DateTime(
+                  newSelectedDay.year,
+                  newSelectedDay.month,
+                  newSelectedDay.day,
+                );
                 final entry = ref.read(journalProvider)[dateKey];
                 if (_entryHasContent(entry)) {
                   await Navigator.of(context).pushNamed(

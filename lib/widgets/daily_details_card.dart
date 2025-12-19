@@ -22,7 +22,8 @@ class DailyDetailsCard extends ConsumerWidget {
 
     final journalData = ref.watch(journalProvider);
     final selectedEntry =
-        journalData[dateKey] ?? const JournalEntry(); // Look up using the dateKey
+        journalData[dateKey] ??
+        const JournalEntry(); // Look up using the dateKey
     final selectedMood = selectedEntry.mood;
     final isSaving = ref.watch(isSavingProvider);
     final formattedDate = DateFormat.yMMMMd().format(date);
@@ -98,10 +99,7 @@ class DailyDetailsCard extends ConsumerWidget {
                               selectedEntry.stickers.isEmpty
                           ? 'Make a journal entry'
                           : 'Edit journal entry',
-                      style: const TextStyle(
-                        color: Colors.grey,
-                        fontSize: 16,
-                      ),
+                      style: const TextStyle(color: Colors.grey, fontSize: 16),
                     ),
                   ),
                   const Icon(Icons.chevron_right, color: Colors.grey),
@@ -121,9 +119,9 @@ class DailyDetailsCard extends ConsumerWidget {
                 padding: const EdgeInsets.symmetric(vertical: 12),
               ),
               onPressed: () async {
-                ref.read(isSavingProvider.notifier).state = true;
+                ref.read(isSavingProvider.notifier).setSaving(true);
                 await Future.delayed(const Duration(seconds: 2));
-                ref.read(isSavingProvider.notifier).state = false;
+                ref.read(isSavingProvider.notifier).setSaving(false);
 
                 // FIX: Pop the dialog and return 'true' to signal success.
                 if (context.mounted) {
