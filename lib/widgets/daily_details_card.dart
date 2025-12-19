@@ -29,46 +29,62 @@ class DailyDetailsCard extends ConsumerWidget {
     final formattedDate = DateFormat.yMMMMd().format(date);
 
     return Padding(
-      padding: const EdgeInsets.all(16.0),
+      padding: const EdgeInsets.all(24.0),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
-        mainAxisSize: MainAxisSize.min, // Makes the card fit its content
+        mainAxisSize: MainAxisSize.min,
         children: [
           Text(
-            formattedDate, // Show the date this entry is for
+            formattedDate,
             style: GoogleFonts.patrickHand(
-              fontSize: 20,
+              fontSize: 24,
               fontWeight: FontWeight.bold,
             ),
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: 32),
+          // Big mood selection buttons - MANDATORY
+          Text(
+            'How are you feeling? *',
+            style: GoogleFonts.patrickHand(
+              fontSize: 22,
+              fontWeight: FontWeight.bold,
+              color: Colors.black87,
+            ),
+          ),
+          const SizedBox(height: 20),
           Row(
-            mainAxisAlignment: MainAxisAlignment.spaceAround,
+            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
             children: [
-              for (final mood
-                  in Mood.values) // A clean way to create all 3 chips
-                ChoiceChip(
-                  label: Text(mood.name),
-                  avatar: Icon(
-                    mood == Mood.happy
-                        ? Icons.sentiment_very_satisfied
-                        : mood == Mood.neutral
-                        ? Icons.sentiment_neutral
-                        : Icons.sentiment_very_dissatisfied,
+              for (final mood in Mood.values)
+                Expanded(
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 6.0),
+                    child: _MoodButton(
+                      mood: mood,
+                      isSelected: selectedMood == mood,
+                      onTap: () {
+                        ref
+                            .read(journalProvider.notifier)
+                            .updateMood(dateKey, mood);
+                      },
+                    ),
                   ),
-                  selected: selectedMood == mood,
-                  onSelected: (isSelected) {
-                    if (isSelected) {
-                      ref
-                          .read(journalProvider.notifier)
-                          .updateMood(dateKey, mood);
-                    }
-                  },
-                  selectedColor: primaryColor.withOpacity(0.7),
                 ),
             ],
           ),
-          const Divider(height: 30),
+          const SizedBox(height: 40),
+          const Divider(),
+          const SizedBox(height: 24),
+          // Optional journal entry section (smaller, less prominent)
+          Text(
+            'Optional: Add journal entry',
+            style: GoogleFonts.patrickHand(
+              fontSize: 14,
+              color: Colors.grey.shade500,
+              fontStyle: FontStyle.italic,
+            ),
+          ),
+          const SizedBox(height: 12),
           InkWell(
             borderRadius: BorderRadius.circular(10),
             onTap: () {
@@ -78,66 +94,140 @@ class DailyDetailsCard extends ConsumerWidget {
               );
             },
             child: Container(
-              height: 100,
+              height: 50,
               width: double.infinity,
               decoration: BoxDecoration(
-                color: backgroundColor,
-                borderRadius: BorderRadius.circular(10),
+                color: Colors.grey.shade50,
+                borderRadius: BorderRadius.circular(8),
                 border: Border.all(
-                  color: Colors.grey.shade300,
+                  color: Colors.grey.shade200,
                   style: BorderStyle.solid,
                 ),
               ),
-              padding: const EdgeInsets.symmetric(horizontal: 16),
+              padding: const EdgeInsets.symmetric(horizontal: 12),
               child: Row(
                 children: [
-                  const Icon(Icons.draw_rounded, color: Colors.grey),
-                  const SizedBox(width: 12),
+                  const Icon(Icons.draw_rounded, color: Colors.grey, size: 18),
+                  const SizedBox(width: 8),
                   Expanded(
                     child: Text(
                       selectedEntry.strokes.isEmpty &&
                               selectedEntry.stickers.isEmpty
-                          ? 'Make a journal entry'
+                          ? 'Add drawing or stickers (optional)'
                           : 'Edit journal entry',
-                      style: const TextStyle(color: Colors.grey, fontSize: 16),
+                      style: TextStyle(
+                        color: Colors.grey.shade600,
+                        fontSize: 13,
+                      ),
                     ),
                   ),
-                  const Icon(Icons.chevron_right, color: Colors.grey),
+                  const Icon(Icons.chevron_right,
+                      color: Colors.grey, size: 18),
                 ],
               ),
             ),
           ),
-          const SizedBox(height: 20),
+          const SizedBox(height: 24),
           SizedBox(
             width: double.infinity,
             child: ElevatedButton(
               style: ElevatedButton.styleFrom(
-                backgroundColor: accentColor,
+                backgroundColor: selectedMood != null ? accentColor : Colors.grey.shade400,
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(10),
                 ),
-                padding: const EdgeInsets.symmetric(vertical: 12),
+                padding: const EdgeInsets.symmetric(vertical: 16),
               ),
-              onPressed: () async {
+              onPressed: selectedMood != null ? () async {
                 ref.read(isSavingProvider.notifier).setSaving(true);
                 await Future.delayed(const Duration(seconds: 2));
                 ref.read(isSavingProvider.notifier).setSaving(false);
 
-                // FIX: Pop the dialog and return 'true' to signal success.
                 if (context.mounted) {
                   Navigator.of(context).pop(true);
                 }
-              },
+              } : null,
               child: isSaving
                   ? const SizedBox(
                       height: 24,
                       width: 24,
                       child: CircularProgressIndicator(color: Colors.white),
                     )
-                  : const Text("Save Entry", style: TextStyle(fontSize: 18)),
+                  : Text(
+                      selectedMood != null ? "Save" : "Select a mood to save",
+                      style: GoogleFonts.patrickHand(
+                        fontSize: 20,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
             ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+// --- Big Mood Button Widget ---
+class _MoodButton extends StatelessWidget {
+  final Mood mood;
+  final bool isSelected;
+  final VoidCallback onTap;
+
+  const _MoodButton({
+    required this.mood,
+    required this.isSelected,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final icon = mood == Mood.happy
+        ? Icons.sentiment_very_satisfied
+        : mood == Mood.neutral
+            ? Icons.sentiment_neutral
+            : Icons.sentiment_very_dissatisfied;
+
+    final color = mood == Mood.happy
+        ? Colors.green
+        : mood == Mood.neutral
+            ? Colors.orange
+            : Colors.blue;
+
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(12),
+      child: Container(
+        padding: const EdgeInsets.symmetric(vertical: 24, horizontal: 8),
+        decoration: BoxDecoration(
+          color: isSelected
+              ? color.withOpacity(0.25)
+              : Colors.grey.shade100,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(
+            color: isSelected ? color : Colors.grey.shade300,
+            width: isSelected ? 3 : 1,
+          ),
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              icon,
+              size: 56,
+              color: isSelected ? color : Colors.grey.shade600,
+            ),
+            const SizedBox(height: 10),
+            Text(
+              mood.name.toUpperCase(),
+              style: GoogleFonts.patrickHand(
+                fontSize: 16,
+                fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                color: isSelected ? color : Colors.grey.shade700,
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

@@ -1,12 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
+import 'screens/bookshelf_screen.dart';
 import 'screens/comprehensive_demo_screen.dart';
 import 'screens/demo_menu_screen.dart';
 import 'screens/home_screen.dart';
 import 'screens/journal_entry_screen.dart';
+import 'screens/month_view_screen.dart';
 import 'screens/navigation_demo_screen.dart';
 import 'screens/stats_screen.dart';
+import 'screens/year_view_screen.dart';
 import 'utils/constants.dart';
 
 class MochiApp extends StatelessWidget {
@@ -46,12 +49,38 @@ class MochiApp extends StatelessWidget {
         NavigationDemoScreen.routeName: (context) => const NavigationDemoScreen(),
         StatsScreen.routeName: (context) => const StatsScreen(),
         ComprehensiveDemoScreen.routeName: (context) => const ComprehensiveDemoScreen(),
+        BookshelfScreen.routeName: (context) => const BookshelfScreen(),
+        YearViewScreen.routeName: (context) => const YearViewScreen(),
+        MonthViewScreen.routeName: (context) => const MonthViewScreen(),
       },
       onGenerateRoute: (settings) {
         final journalRoute = _handleJournalEntryRoute(settings);
         if (journalRoute != null) {
           return journalRoute;
         }
+        
+        // Handle YearViewScreen with arguments
+        if (settings.name == YearViewScreen.routeName) {
+          final args = settings.arguments;
+          if (args is YearViewScreenArguments) {
+            return MaterialPageRoute<void>(
+              builder: (_) => const YearViewScreen(),
+              settings: settings,
+            );
+          }
+        }
+        
+        // Handle MonthViewScreen with arguments
+        if (settings.name == MonthViewScreen.routeName) {
+          final args = settings.arguments;
+          if (args is MonthViewScreenArguments) {
+            return MaterialPageRoute<void>(
+              builder: (_) => const MonthViewScreen(),
+              settings: settings,
+            );
+          }
+        }
+        
         final navigationRoute = NavigationDemoScreen.onGenerateRoute(settings);
         if (navigationRoute != null) {
           return navigationRoute;

@@ -9,6 +9,7 @@ import '../providers/journal_providers.dart';
 import '../utils/constants.dart';
 import '../widgets/daily_details_card.dart';
 import '../widgets/weather_icon_button.dart';
+import 'bookshelf_screen.dart';
 import 'demo_menu_screen.dart';
 import 'journal_entry_screen.dart';
 import 'stats_screen.dart';
@@ -27,6 +28,7 @@ class _MochiHomePageState extends ConsumerState<MochiHomePage> {
   DateTime? _lastTappedDay;
   DateTime? _lastTapTimestamp;
   int _currentIndex = 0;
+  bool _hasHandledArgs = false;
 
   @override
   void initState() {
@@ -34,7 +36,29 @@ class _MochiHomePageState extends ConsumerState<MochiHomePage> {
     // Initialize mock data after first frame
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _initializeMockData();
+      // Handle route arguments after the widget tree is built
+      _handleRouteArguments();
     });
+  }
+
+  void _handleRouteArguments() {
+    if (_hasHandledArgs) return;
+    _hasHandledArgs = true;
+    
+    // Check if we have a year/month argument from bookshelf or year view navigation
+    final args = ModalRoute.of(context)?.settings.arguments;
+    if (args is Map) {
+      Future.microtask(() {
+        if (args.containsKey('year') && args.containsKey('month')) {
+          final year = args['year'] as int;
+          final month = args['month'] as int;
+          ref.read(selectedDateProvider.notifier).setDate(DateTime(year, month, 1));
+        } else if (args.containsKey('year')) {
+          final year = args['year'] as int;
+          ref.read(selectedDateProvider.notifier).setDate(DateTime(year, 1, 1));
+        }
+      });
+    }
   }
 
   void _initializeMockData() {
@@ -103,6 +127,137 @@ class _MochiHomePageState extends ConsumerState<MochiHomePage> {
         entry.stickers.isNotEmpty;
   }
 
+  Future<void> _showMonthYearPicker(BuildContext context, DateTime focusedDay) async {
+    final initialYear = focusedDay.year;
+    final initialMonth = focusedDay.month;
+    int? selectedYear;
+    int? selectedMonth;
+
+    await showDialog(
+      context: context,
+      builder: (context) {
+        return StatefulBuilder(
+          builder: (context, setDialogState) {
+            selectedYear ??= initialYear;
+            selectedMonth ??= initialMonth;
+
+            return AlertDialog(
+              title: Text(
+                'Select Month & Year',
+                style: GoogleFonts.patrickHand(fontSize: 20),
+              ),
+              content: SizedBox(
+                width: 300,
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    // Month picker
+                    Text(
+                      'Month',
+                      style: GoogleFonts.patrickHand(fontSize: 16),
+                    ),
+                    const SizedBox(height: 8),
+                    SizedBox(
+                      height: 150,
+                      child: GridView.builder(
+                        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                          crossAxisCount: 3,
+                          childAspectRatio: 2.5,
+                        ),
+                        itemCount: 12,
+                        itemBuilder: (context, index) {
+                          final month = index + 1;
+                          final monthNames = [
+                            'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
+                            'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'
+                          ];
+                          final isSelected = selectedMonth == month;
+                          return InkWell(
+                            onTap: () {
+                              setDialogState(() {
+                                selectedMonth = month;
+                              });
+                            },
+                            child: Container(
+                              margin: const EdgeInsets.all(4),
+                              decoration: BoxDecoration(
+                                color: isSelected
+                                    ? primaryColor.withOpacity(0.2)
+                                    : Colors.grey.shade100,
+                                borderRadius: BorderRadius.circular(8),
+                                border: Border.all(
+                                  color: isSelected ? primaryColor : Colors.grey.shade300,
+                                  width: isSelected ? 2 : 1,
+                                ),
+                              ),
+                              child: Center(
+                                child: Text(
+                                  monthNames[index],
+                                  style: GoogleFonts.patrickHand(
+                                    fontSize: 14,
+                                    fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                                    color: isSelected ? primaryColor : Colors.grey.shade700,
+                                  ),
+                                ),
+                              ),
+                            ),
+                          );
+                        },
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    // Year picker
+                    Text(
+                      'Year',
+                      style: GoogleFonts.patrickHand(fontSize: 16),
+                    ),
+                    const SizedBox(height: 8),
+                    SizedBox(
+                      height: 200,
+                      child: YearPicker(
+                        firstDate: DateTime(2020),
+                        lastDate: DateTime(2030),
+                        selectedDate: DateTime(selectedYear!),
+                        onChanged: (date) {
+                          setDialogState(() {
+                            selectedYear = date.year;
+                          });
+                        },
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.of(context).pop(),
+                  child: const Text('Cancel'),
+                ),
+                TextButton(
+                  onPressed: () {
+                    if (selectedYear != null && selectedMonth != null) {
+                      Navigator.of(context).pop({
+                        'year': selectedYear,
+                        'month': selectedMonth,
+                      });
+                    }
+                  },
+                  child: const Text('OK'),
+                ),
+              ],
+            );
+          },
+        );
+      },
+    ).then((result) {
+      if (result is Map && result.containsKey('year') && result.containsKey('month')) {
+        final year = result['year'] as int;
+        final month = result['month'] as int;
+        ref.read(selectedDateProvider.notifier).setDate(DateTime(year, month, 1));
+      }
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     // We watch the selectedDateProvider to highlight the day on the calendar.
@@ -119,7 +274,16 @@ class _MochiHomePageState extends ConsumerState<MochiHomePage> {
             Navigator.of(context).pushNamed(DemoMenuScreen.routeName);
           },
         ),
-        actions: const [WeatherIconButton()],
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.library_books_rounded),
+            tooltip: 'My Bookshelf',
+            onPressed: () {
+              Navigator.of(context).pushNamed(BookshelfScreen.routeName);
+            },
+          ),
+          const WeatherIconButton(),
+        ],
       ),
       // --- Floating Action Button for adding entries ---
       floatingActionButton: FloatingActionButton(
@@ -194,7 +358,12 @@ class _MochiHomePageState extends ConsumerState<MochiHomePage> {
               titleCentered: true,
               formatButtonVisible: false,
               titleTextStyle: GoogleFonts.patrickHand(fontSize: 20.0),
+              leftChevronIcon: const Icon(Icons.chevron_left),
+              rightChevronIcon: const Icon(Icons.chevron_right),
             ),
+            onHeaderTapped: (focusedDay) async {
+              await _showMonthYearPicker(context, focusedDay);
+            },
             calendarStyle: CalendarStyle(
               selectedDecoration: const BoxDecoration(
                 color: primaryColor,
