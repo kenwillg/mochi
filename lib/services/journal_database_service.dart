@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'dart:ui';
 
 import 'package:flutter/foundation.dart';
+import 'package:flutter/material.dart';
 import 'package:sqflite/sqflite.dart';
 import 'package:path/path.dart';
 
@@ -54,6 +55,7 @@ class JournalDatabaseService implements JournalStorageService {
         mood TEXT,
         strokes TEXT,
         stickers TEXT,
+        texts TEXT,
         created_at INTEGER,
         updated_at INTEGER
       )
@@ -90,6 +92,7 @@ class JournalDatabaseService implements JournalStorageService {
                 'points': s.points
                     .map((p) => {'dx': p.dx, 'dy': p.dy})
                     .toList(),
+                'color': s.color.value,
               },
             )
             .toList(),
@@ -105,12 +108,25 @@ class JournalDatabaseService implements JournalStorageService {
             )
             .toList(),
       );
+      final textsJson = jsonEncode(
+        entry.texts
+            .map(
+              (t) => {
+                'text': t.text,
+                'position': {'dx': t.position.dx, 'dy': t.position.dy},
+                'color': t.color.value,
+                'fontSize': t.fontSize,
+              },
+            )
+            .toList(),
+      );
 
       await db.insert(_tableName, {
         'date': dateKey,
         'mood': moodStr,
         'strokes': strokesJson,
         'stickers': stickersJson,
+        'texts': textsJson,
         'created_at': now,
         'updated_at': now,
       }, conflictAlgorithm: ConflictAlgorithm.replace);
@@ -150,6 +166,7 @@ class JournalDatabaseService implements JournalStorageService {
       final moodStr = map['mood'] as String?;
       final strokesJson = map['strokes'] as String?;
       final stickersJson = map['stickers'] as String?;
+      final textsJson = map['texts'] as String?;
 
       Mood? mood;
       if (moodStr != null) {
@@ -166,7 +183,11 @@ class JournalDatabaseService implements JournalStorageService {
           final points = (s['points'] as List).map((p) {
             return Offset(p['dx'] as double, p['dy'] as double);
           }).toList();
-          return DrawnStroke(points: points);
+          final colorValue = s['color'] as int?;
+          final color = colorValue != null
+              ? Color(colorValue)
+              : Colors.black87; // Default color for backward compatibility
+          return DrawnStroke(points: points, color: color);
         }).toList();
       }
 
@@ -187,11 +208,34 @@ class JournalDatabaseService implements JournalStorageService {
         }).toList();
       }
 
+      List<TextPlacement> texts = [];
+      if (textsJson != null && textsJson.isNotEmpty) {
+        final textsList = jsonDecode(textsJson) as List;
+        texts = textsList.map((t) {
+          final pos = t['position'] as Map;
+          final colorValue = t['color'] as int?;
+          final color = colorValue != null
+              ? Color(colorValue)
+              : Colors.black87; // Default color
+          return TextPlacement(
+            text: t['text'] as String,
+            position: Offset(pos['dx'] as double, pos['dy'] as double),
+            color: color,
+            fontSize: (t['fontSize'] as num?)?.toDouble() ?? 16.0,
+          );
+        }).toList();
+      }
+
       if (kDebugMode) {
         debugPrint('[JournalDatabase] Loaded entry for date: $dateKey');
       }
 
-      return JournalEntry(mood: mood, strokes: strokes, stickers: stickers);
+      return JournalEntry(
+        mood: mood,
+        strokes: strokes,
+        stickers: stickers,
+        texts: texts,
+      );
     } catch (e) {
       if (kDebugMode) {
         debugPrint('[JournalDatabase] Error loading entry: $e');
@@ -217,6 +261,7 @@ class JournalDatabaseService implements JournalStorageService {
         final moodStr = map['mood'] as String?;
         final strokesJson = map['strokes'] as String?;
         final stickersJson = map['stickers'] as String?;
+        final textsJson = map['texts'] as String?;
 
         Mood? mood;
         if (moodStr != null) {
@@ -233,7 +278,11 @@ class JournalDatabaseService implements JournalStorageService {
             final points = (s['points'] as List).map((p) {
               return Offset(p['dx'] as double, p['dy'] as double);
             }).toList();
-            return DrawnStroke(points: points);
+            final colorValue = s['color'] as int?;
+            final color = colorValue != null
+                ? Color(colorValue)
+                : Colors.black87; // Default color for backward compatibility
+            return DrawnStroke(points: points, color: color);
           }).toList();
         }
 
@@ -254,10 +303,29 @@ class JournalDatabaseService implements JournalStorageService {
           }).toList();
         }
 
+        List<TextPlacement> texts = [];
+        if (textsJson != null && textsJson.isNotEmpty) {
+          final textsList = jsonDecode(textsJson) as List;
+          texts = textsList.map((t) {
+            final pos = t['position'] as Map;
+            final colorValue = t['color'] as int?;
+            final color = colorValue != null
+                ? Color(colorValue)
+                : Colors.black87; // Default color
+            return TextPlacement(
+              text: t['text'] as String,
+              position: Offset(pos['dx'] as double, pos['dy'] as double),
+              color: color,
+              fontSize: (t['fontSize'] as num?)?.toDouble() ?? 16.0,
+            );
+          }).toList();
+        }
+
         entries[normalizedDate] = JournalEntry(
           mood: mood,
           strokes: strokes,
           stickers: stickers,
+          texts: texts,
         );
       }
 

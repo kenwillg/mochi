@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'dart:ui';
 
 import 'package:flutter/foundation.dart';
+import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../models/journal_entry.dart';
@@ -48,6 +49,7 @@ class WebJournalStorageService implements JournalStorageService {
         'strokes': entry.strokes.map((s) {
           return {
             'points': s.points.map((p) => {'dx': p.dx, 'dy': p.dy}).toList(),
+            'color': s.color.value,
           };
         }).toList(),
         'stickers': entry.stickers.map((s) {
@@ -55,6 +57,14 @@ class WebJournalStorageService implements JournalStorageService {
             'mood': s.mood.name,
             'position': {'dx': s.position.dx, 'dy': s.position.dy},
             'size': s.size,
+          };
+        }).toList(),
+        'texts': entry.texts.map((t) {
+          return {
+            'text': t.text,
+            'position': {'dx': t.position.dx, 'dy': t.position.dy},
+            'color': t.color.value,
+            'fontSize': t.fontSize,
           };
         }).toList(),
       };
@@ -175,7 +185,11 @@ class WebJournalStorageService implements JournalStorageService {
         final points = (s['points'] as List).map((p) {
           return Offset(p['dx'] as double, p['dy'] as double);
         }).toList();
-        return DrawnStroke(points: points);
+        final colorValue = s['color'] as int?;
+        final color = colorValue != null
+            ? Color(colorValue)
+            : Colors.black87; // Default color for backward compatibility
+        return DrawnStroke(points: points, color: color);
       }).toList();
     }
 
@@ -196,11 +210,29 @@ class WebJournalStorageService implements JournalStorageService {
       }).toList();
     }
 
+    List<TextPlacement> texts = [];
+    if (entryJson['texts'] != null) {
+      final textsList = entryJson['texts'] as List;
+      texts = textsList.map((t) {
+        final pos = t['position'] as Map;
+        final colorValue = t['color'] as int?;
+        final color = colorValue != null
+            ? Color(colorValue)
+            : Colors.black87; // Default color
+        return TextPlacement(
+          text: t['text'] as String,
+          position: Offset(pos['dx'] as double, pos['dy'] as double),
+          color: color,
+          fontSize: (t['fontSize'] as num?)?.toDouble() ?? 16.0,
+        );
+      }).toList();
+    }
+
     return JournalEntry(
       mood: mood,
       strokes: strokes,
       stickers: stickers,
+      texts: texts,
     );
   }
 }
-

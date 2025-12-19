@@ -99,12 +99,14 @@ class JournalDataNotifier extends Notifier<Map<DateTime, JournalEntry>> {
     DateTime date, {
     List<DrawnStroke>? strokes,
     List<StickerPlacement>? stickers,
+    List<TextPlacement>? texts,
   }) {
     final normalized = _normalize(date);
     final current = entryFor(normalized);
     final updated = current.copyWith(
       strokes: strokes ?? current.strokes,
       stickers: stickers ?? current.stickers,
+      texts: texts ?? current.texts,
     );
 
     state = {...state, normalized: updated};

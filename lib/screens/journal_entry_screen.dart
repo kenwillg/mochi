@@ -15,6 +15,8 @@ class JournalEntryScreenArguments {
   final DateTime date;
 }
 
+enum _ToolMode { draw, text, sticker }
+
 class JournalEntryScreen extends ConsumerStatefulWidget {
   const JournalEntryScreen({super.key, required this.date});
 
@@ -30,7 +32,31 @@ class _JournalEntryScreenState extends ConsumerState<JournalEntryScreen> {
   final GlobalKey _canvasKey = GlobalKey();
   final List<DrawnStroke> _strokes = [];
   final List<StickerPlacement> _stickers = [];
+  final List<TextPlacement> _texts = [];
   int? _selectedStickerIndex;
+  int? _selectedTextIndex;
+  _ToolMode _currentMode = _ToolMode.draw;
+  Color _currentColor = Colors.black87;
+  final TextEditingController _textController = TextEditingController();
+
+  // Available colors for drawing and text
+  static const List<Color> _availableColors = [
+    Colors.black87,
+    Colors.red,
+    Colors.blue,
+    Colors.green,
+    Colors.orange,
+    Colors.purple,
+    Colors.pink,
+    Colors.brown,
+    Colors.teal,
+    Colors.indigo,
+    Colors.cyan,
+    Colors.amber,
+    Colors.deepOrange,
+    Colors.lightBlue,
+    Colors.lime,
+  ];
 
   @override
   void initState() {
@@ -40,7 +66,8 @@ class _JournalEntryScreenState extends ConsumerState<JournalEntryScreen> {
       ..clear()
       ..addAll(
         entry.strokes.map(
-          (stroke) => DrawnStroke(points: List.of(stroke.points)),
+          (stroke) =>
+              DrawnStroke(points: List.of(stroke.points), color: stroke.color),
         ),
       );
     _stickers
@@ -54,20 +81,34 @@ class _JournalEntryScreenState extends ConsumerState<JournalEntryScreen> {
           ),
         ),
       );
+    _texts
+      ..clear()
+      ..addAll(entry.texts);
+  }
+
+  @override
+  void dispose() {
+    _textController.dispose();
+    super.dispose();
   }
 
   void _onPanStart(DragStartDetails details) {
+    if (_currentMode != _ToolMode.draw) return;
     if (!_isPointInsideCanvas(details.localPosition)) {
       return;
     }
     final clampedPosition = _clampToCanvas(details.localPosition);
     setState(() {
       _selectedStickerIndex = null;
-      _strokes.add(DrawnStroke(points: [clampedPosition]));
+      _selectedTextIndex = null;
+      _strokes.add(
+        DrawnStroke(points: [clampedPosition], color: _currentColor),
+      );
     });
   }
 
   void _onPanUpdate(DragUpdateDetails details) {
+    if (_currentMode != _ToolMode.draw) return;
     if (_strokes.isEmpty) {
       return;
     }
@@ -79,6 +120,7 @@ class _JournalEntryScreenState extends ConsumerState<JournalEntryScreen> {
   }
 
   void _onPanEnd(DragEndDetails details) {
+    if (_currentMode != _ToolMode.draw) return;
     if (_strokes.isEmpty) {
       return;
     }
@@ -86,7 +128,24 @@ class _JournalEntryScreenState extends ConsumerState<JournalEntryScreen> {
         .map((point) => Offset(point.dx, point.dy))
         .toList();
     setState(() {
-      _strokes[_strokes.length - 1] = DrawnStroke(points: cleaned);
+      _strokes[_strokes.length - 1] = _strokes[_strokes.length - 1].copyWith(
+        points: cleaned,
+      );
+    });
+  }
+
+  void _onScaleStart(ScaleStartDetails details) {
+    if (_selectedStickerIndex == null) return;
+    // Store initial size for scaling
+  }
+
+  void _onScaleUpdate(ScaleUpdateDetails details) {
+    if (_selectedStickerIndex == null) return;
+    setState(() {
+      final index = _selectedStickerIndex!;
+      final sticker = _stickers[index];
+      final newSize = (sticker.size * details.scale).clamp(40.0, 200.0);
+      _stickers[index] = sticker.copyWith(size: newSize);
     });
   }
 
@@ -103,7 +162,234 @@ class _JournalEntryScreenState extends ConsumerState<JournalEntryScreen> {
         StickerPlacement(mood: mood, position: position, size: defaultSize),
       );
       _selectedStickerIndex = _stickers.length - 1;
+      _selectedTextIndex = null;
+      _currentMode = _ToolMode.sticker;
     });
+  }
+
+  void _addText(Offset position) {
+    _textController.clear();
+    showDialog(
+      context: context,
+      builder: (context) {
+        double fontSize = 16.0;
+        return StatefulBuilder(
+          builder: (context, setDialogState) {
+            return AlertDialog(
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(16),
+              ),
+              title: const Text('Add Text'),
+              content: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  TextField(
+                    controller: _textController,
+                    autofocus: true,
+                    decoration: InputDecoration(
+                      hintText: 'Enter your text...',
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      filled: true,
+                      fillColor: Colors.grey.shade50,
+                    ),
+                    maxLines: 3,
+                    style: TextStyle(color: _currentColor, fontSize: fontSize),
+                  ),
+                  const SizedBox(height: 16),
+                  Row(
+                    children: [
+                      Text(
+                        'Size:',
+                        style: TextStyle(
+                          fontSize: 14,
+                          color: Colors.grey.shade700,
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Slider(
+                          value: fontSize,
+                          min: 12.0,
+                          max: 32.0,
+                          divisions: 10,
+                          label: fontSize.round().toString(),
+                          onChanged: (value) {
+                            setDialogState(() {
+                              fontSize = value;
+                            });
+                          },
+                        ),
+                      ),
+                      Text(
+                        fontSize.round().toString(),
+                        style: TextStyle(
+                          fontSize: 14,
+                          color: Colors.grey.shade700,
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.of(context).pop(),
+                  child: const Text('Cancel'),
+                ),
+                ElevatedButton(
+                  onPressed: () {
+                    if (_textController.text.isNotEmpty) {
+                      setState(() {
+                        _texts.add(
+                          TextPlacement(
+                            text: _textController.text,
+                            position: position,
+                            color: _currentColor,
+                            fontSize: fontSize,
+                          ),
+                        );
+                        _selectedTextIndex = _texts.length - 1;
+                        _selectedStickerIndex = null;
+                      });
+                    }
+                    Navigator.of(context).pop();
+                  },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: accentColor,
+                    foregroundColor: Colors.white,
+                  ),
+                  child: const Text('Add'),
+                ),
+              ],
+            );
+          },
+        );
+      },
+    );
+  }
+
+  void _editText(int index) {
+    final text = _texts[index];
+    _textController.text = text.text;
+    _currentColor = text.color;
+    showDialog(
+      context: context,
+      builder: (context) {
+        double fontSize = text.fontSize;
+        return StatefulBuilder(
+          builder: (context, setDialogState) {
+            return AlertDialog(
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(16),
+              ),
+              title: const Text('Edit Text'),
+              content: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  TextField(
+                    controller: _textController,
+                    autofocus: true,
+                    decoration: InputDecoration(
+                      hintText: 'Enter your text...',
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      filled: true,
+                      fillColor: Colors.grey.shade50,
+                    ),
+                    maxLines: 3,
+                    style: TextStyle(color: _currentColor, fontSize: fontSize),
+                  ),
+                  const SizedBox(height: 16),
+                  Row(
+                    children: [
+                      Text(
+                        'Size:',
+                        style: TextStyle(
+                          fontSize: 14,
+                          color: Colors.grey.shade700,
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Slider(
+                          value: fontSize,
+                          min: 12.0,
+                          max: 32.0,
+                          divisions: 10,
+                          label: fontSize.round().toString(),
+                          onChanged: (value) {
+                            setDialogState(() {
+                              fontSize = value;
+                            });
+                          },
+                        ),
+                      ),
+                      Text(
+                        fontSize.round().toString(),
+                        style: TextStyle(
+                          fontSize: 14,
+                          color: Colors.grey.shade700,
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () {
+                    setState(() {
+                      _texts.removeAt(index);
+                      _selectedTextIndex = null;
+                    });
+                    Navigator.of(context).pop();
+                  },
+                  child: Text('Delete', style: TextStyle(color: Colors.red)),
+                ),
+                TextButton(
+                  onPressed: () => Navigator.of(context).pop(),
+                  child: const Text('Cancel'),
+                ),
+                ElevatedButton(
+                  onPressed: () {
+                    if (_textController.text.isNotEmpty) {
+                      setState(() {
+                        _texts[index] = text.copyWith(
+                          text: _textController.text,
+                          color: _currentColor,
+                          fontSize: fontSize,
+                        );
+                      });
+                    }
+                    Navigator.of(context).pop();
+                  },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: accentColor,
+                    foregroundColor: Colors.white,
+                  ),
+                  child: const Text('Save'),
+                ),
+              ],
+            );
+          },
+        );
+      },
+    );
+  }
+
+  void _onCanvasTap(TapDownDetails details) {
+    if (_currentMode == _ToolMode.text) {
+      final position = _clampToCanvas(details.localPosition);
+      _addText(position);
+    } else {
+      setState(() {
+        _selectedStickerIndex = null;
+        _selectedTextIndex = null;
+      });
+    }
   }
 
   void _saveEntry() {
@@ -115,6 +401,7 @@ class _JournalEntryScreenState extends ConsumerState<JournalEntryScreen> {
               .map(
                 (stroke) => DrawnStroke(
                   points: stroke.points.map((e) => Offset(e.dx, e.dy)).toList(),
+                  color: stroke.color,
                 ),
               )
               .toList(),
@@ -124,6 +411,16 @@ class _JournalEntryScreenState extends ConsumerState<JournalEntryScreen> {
                   mood: sticker.mood,
                   position: Offset(sticker.position.dx, sticker.position.dy),
                   size: sticker.size,
+                ),
+              )
+              .toList(),
+          texts: _texts
+              .map(
+                (text) => TextPlacement(
+                  text: text.text,
+                  position: Offset(text.position.dx, text.position.dy),
+                  color: text.color,
+                  fontSize: text.fontSize,
                 ),
               )
               .toList(),
@@ -192,22 +489,135 @@ class _JournalEntryScreenState extends ConsumerState<JournalEntryScreen> {
       body: SafeArea(
         child: Column(
           children: [
-            Padding(
-              padding: const EdgeInsets.all(16.0),
-              child: Align(
-                alignment: Alignment.centerLeft,
-                child: Text(
-                  'Draw how you felt today. Tap + to add stickers!',
-                  style: Theme.of(context).textTheme.titleMedium,
-                ),
+            // Tool selection bar
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.05),
+                    blurRadius: 4,
+                    offset: const Offset(0, 2),
+                  ),
+                ],
+              ),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                children: [
+                  _buildToolButton(
+                    icon: Icons.edit,
+                    label: 'Draw',
+                    mode: _ToolMode.draw,
+                  ),
+                  _buildToolButton(
+                    icon: Icons.text_fields,
+                    label: 'Text',
+                    mode: _ToolMode.text,
+                  ),
+                  _buildToolButton(
+                    icon: Icons.emoji_emotions,
+                    label: 'Sticker',
+                    mode: _ToolMode.sticker,
+                  ),
+                ],
               ),
             ),
+            // Enhanced color picker (shown when in draw or text mode)
+            if (_currentMode == _ToolMode.draw ||
+                _currentMode == _ToolMode.text)
+              Container(
+                padding: const EdgeInsets.symmetric(
+                  vertical: 12,
+                  horizontal: 16,
+                ),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.05),
+                      blurRadius: 4,
+                      offset: const Offset(0, -2),
+                    ),
+                  ],
+                ),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      'Select Color',
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: Colors.grey.shade600,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Wrap(
+                      spacing: 8,
+                      runSpacing: 8,
+                      alignment: WrapAlignment.center,
+                      children: _availableColors.map((color) {
+                        final isSelected = color == _currentColor;
+                        return GestureDetector(
+                          onTap: () {
+                            setState(() {
+                              _currentColor = color;
+                              // Update selected text color if in text mode
+                              if (_currentMode == _ToolMode.text &&
+                                  _selectedTextIndex != null) {
+                                _texts[_selectedTextIndex!] =
+                                    _texts[_selectedTextIndex!].copyWith(
+                                      color: color,
+                                    );
+                              }
+                            });
+                          },
+                          child: AnimatedContainer(
+                            duration: const Duration(milliseconds: 200),
+                            width: isSelected ? 40 : 36,
+                            height: isSelected ? 40 : 36,
+                            decoration: BoxDecoration(
+                              color: color,
+                              shape: BoxShape.circle,
+                              border: Border.all(
+                                color: isSelected
+                                    ? accentColor
+                                    : Colors.grey.shade300,
+                                width: isSelected ? 3 : 2,
+                              ),
+                              boxShadow: isSelected
+                                  ? [
+                                      BoxShadow(
+                                        color: color.withOpacity(0.4),
+                                        blurRadius: 8,
+                                        spreadRadius: 2,
+                                      ),
+                                    ]
+                                  : null,
+                            ),
+                            child: isSelected
+                                ? const Icon(
+                                    Icons.check,
+                                    color: Colors.white,
+                                    size: 20,
+                                  )
+                                : null,
+                          ),
+                        );
+                      }).toList(),
+                    ),
+                  ],
+                ),
+              ),
             Expanded(
               child: GestureDetector(
                 onPanStart: _onPanStart,
                 onPanUpdate: _onPanUpdate,
                 onPanEnd: _onPanEnd,
-                onTap: () => setState(() => _selectedStickerIndex = null),
+                onScaleStart: _onScaleStart,
+                onScaleUpdate: _onScaleUpdate,
+                onTapDown: _onCanvasTap,
                 child: Container(
                   key: _canvasKey,
                   margin: const EdgeInsets.symmetric(horizontal: 16),
@@ -229,6 +639,7 @@ class _JournalEntryScreenState extends ConsumerState<JournalEntryScreen> {
                         painter: _JournalCanvasPainter(strokes: _strokes),
                         size: Size.infinite,
                       ),
+                      ..._buildTextWidgets(),
                       ..._buildStickerWidgets(),
                     ],
                   ),
@@ -239,13 +650,143 @@ class _JournalEntryScreenState extends ConsumerState<JournalEntryScreen> {
           ],
         ),
       ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: _showStickerPicker,
-        backgroundColor: accentColor,
-        child: const Icon(Icons.add),
-      ),
+      floatingActionButton: _currentMode == _ToolMode.sticker
+          ? FloatingActionButton(
+              onPressed: _showStickerPicker,
+              backgroundColor: accentColor,
+              child: const Icon(Icons.add),
+            )
+          : null,
       floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat,
     );
+  }
+
+  Widget _buildToolButton({
+    required IconData icon,
+    required String label,
+    required _ToolMode mode,
+  }) {
+    final isSelected = _currentMode == mode;
+    return GestureDetector(
+      onTap: () {
+        setState(() {
+          _currentMode = mode;
+          if (mode == _ToolMode.sticker) {
+            _selectedStickerIndex = null;
+            _selectedTextIndex = null;
+          }
+        });
+      },
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        decoration: BoxDecoration(
+          color: isSelected ? accentColor.withOpacity(0.2) : Colors.transparent,
+          borderRadius: BorderRadius.circular(8),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(icon, color: isSelected ? accentColor : Colors.grey, size: 20),
+            const SizedBox(width: 4),
+            Text(
+              label,
+              style: TextStyle(
+                color: isSelected ? accentColor : Colors.grey,
+                fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  List<Widget> _buildTextWidgets() {
+    final List<Widget> widgets = [];
+    for (var i = 0; i < _texts.length; i++) {
+      final text = _texts[i];
+      final selected = i == _selectedTextIndex;
+      widgets.add(
+        Positioned(
+          left: text.position.dx,
+          top: text.position.dy,
+          child: GestureDetector(
+            onTap: () {
+              setState(() {
+                _selectedTextIndex = selected ? null : i;
+                _selectedStickerIndex = null;
+                if (!selected) {
+                  _currentMode = _ToolMode.text;
+                }
+              });
+            },
+            onDoubleTap: () {
+              _editText(i);
+            },
+            onPanUpdate: selected
+                ? (details) {
+                    setState(() {
+                      _texts[i] = _texts[i].copyWith(
+                        position: _texts[i].position + details.delta,
+                      );
+                    });
+                  }
+                : null,
+            child: Stack(
+              children: [
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 4,
+                  ),
+                  decoration: BoxDecoration(
+                    color: selected
+                        ? text.color.withOpacity(0.1)
+                        : Colors.transparent,
+                    border: selected
+                        ? Border.all(color: accentColor, width: 2)
+                        : null,
+                    borderRadius: BorderRadius.circular(4),
+                  ),
+                  child: Text(
+                    text.text,
+                    style: TextStyle(
+                      color: text.color,
+                      fontSize: text.fontSize,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                ),
+                // Edit button (shown when selected)
+                if (selected)
+                  Positioned(
+                    right: -8,
+                    top: -8,
+                    child: GestureDetector(
+                      onTap: () => _editText(i),
+                      child: Container(
+                        width: 24,
+                        height: 24,
+                        decoration: BoxDecoration(
+                          color: accentColor,
+                          shape: BoxShape.circle,
+                          border: Border.all(color: Colors.white, width: 2),
+                        ),
+                        child: const Icon(
+                          Icons.edit,
+                          color: Colors.white,
+                          size: 12,
+                        ),
+                      ),
+                    ),
+                  ),
+              ],
+            ),
+          ),
+        ),
+      );
+    }
+    return widgets;
   }
 
   List<Widget> _buildStickerWidgets() {
@@ -262,6 +803,8 @@ class _JournalEntryScreenState extends ConsumerState<JournalEntryScreen> {
             onTap: () {
               setState(() {
                 _selectedStickerIndex = selected ? null : i;
+                _selectedTextIndex = null;
+                _currentMode = _ToolMode.sticker;
               });
             },
             onPanUpdate: selected
@@ -273,25 +816,109 @@ class _JournalEntryScreenState extends ConsumerState<JournalEntryScreen> {
                     });
                   }
                 : null,
-            child: Container(
-              width: sticker.size,
-              height: sticker.size,
-              decoration: BoxDecoration(
-                color: Colors.white.withOpacity(0.8),
-                border: Border.all(
-                  color: selected ? accentColor : Colors.transparent,
-                  width: 3,
+            child: Stack(
+              children: [
+                Container(
+                  width: sticker.size,
+                  height: sticker.size,
+                  decoration: BoxDecoration(
+                    color: Colors.white.withOpacity(0.8),
+                    border: Border.all(
+                      color: selected ? accentColor : Colors.transparent,
+                      width: 3,
+                    ),
+                    borderRadius: BorderRadius.circular(16),
+                  ),
+                  alignment: Alignment.center,
+                  child: _stickerIcon(sticker.mood, size: sticker.size * 0.65),
                 ),
-                borderRadius: BorderRadius.circular(16),
-              ),
-              alignment: Alignment.center,
-              child: _stickerIcon(sticker.mood, size: sticker.size * 0.65),
+                // Resize handles (shown when selected)
+                if (selected) ..._buildResizeHandles(i),
+              ],
             ),
           ),
         ),
       );
     }
     return widgets;
+  }
+
+  List<Widget> _buildResizeHandles(int stickerIndex) {
+    final sticker = _stickers[stickerIndex];
+    return [
+      // Bottom-right resize handle
+      Positioned(
+        right: -12,
+        bottom: -12,
+        child: GestureDetector(
+          onPanUpdate: (details) {
+            setState(() {
+              // Calculate size change based on diagonal movement
+              final delta = (details.delta.dx + details.delta.dy) / 2;
+              final newSize = (sticker.size + delta).clamp(40.0, 200.0);
+              _stickers[stickerIndex] = sticker.copyWith(size: newSize);
+            });
+          },
+          child: Container(
+            width: 28,
+            height: 28,
+            decoration: BoxDecoration(
+              color: accentColor,
+              shape: BoxShape.circle,
+              border: Border.all(color: Colors.white, width: 2.5),
+              boxShadow: [
+                BoxShadow(
+                  color: accentColor.withOpacity(0.4),
+                  blurRadius: 4,
+                  spreadRadius: 1,
+                ),
+              ],
+            ),
+            child: const Icon(
+              Icons.open_in_full,
+              color: Colors.white,
+              size: 16,
+            ),
+          ),
+        ),
+      ),
+      // Top-left resize handle (for shrinking)
+      Positioned(
+        left: -12,
+        top: -12,
+        child: GestureDetector(
+          onPanUpdate: (details) {
+            setState(() {
+              // Calculate size change (opposite direction)
+              final delta = -(details.delta.dx + details.delta.dy) / 2;
+              final newSize = (sticker.size + delta).clamp(40.0, 200.0);
+              _stickers[stickerIndex] = sticker.copyWith(size: newSize);
+            });
+          },
+          child: Container(
+            width: 28,
+            height: 28,
+            decoration: BoxDecoration(
+              color: primaryColor,
+              shape: BoxShape.circle,
+              border: Border.all(color: Colors.white, width: 2.5),
+              boxShadow: [
+                BoxShadow(
+                  color: primaryColor.withOpacity(0.4),
+                  blurRadius: 4,
+                  spreadRadius: 1,
+                ),
+              ],
+            ),
+            child: const Icon(
+              Icons.close_fullscreen,
+              color: Colors.white,
+              size: 16,
+            ),
+          ),
+        ),
+      ),
+    ];
   }
 
   bool _isPointInsideCanvas(Offset position) {
@@ -327,14 +954,14 @@ class _JournalCanvasPainter extends CustomPainter {
 
   @override
   void paint(Canvas canvas, Size size) {
-    final paint = Paint()
-      ..color = Colors.black87
-      ..strokeWidth = 4
-      ..strokeCap = StrokeCap.round
-      ..strokeJoin = StrokeJoin.round
-      ..style = PaintingStyle.stroke;
-
     for (final stroke in strokes) {
+      final paint = Paint()
+        ..color = stroke.color
+        ..strokeWidth = 4
+        ..strokeCap = StrokeCap.round
+        ..strokeJoin = StrokeJoin.round
+        ..style = PaintingStyle.stroke;
+
       if (stroke.points.length < 2) {
         if (stroke.points.isNotEmpty) {
           canvas.drawPoints(PointMode.points, stroke.points, paint);
