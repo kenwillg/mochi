@@ -68,6 +68,7 @@ class _DemoEntry {
     required this.subtitle,
     this.builder,
     this.routeName,
+    this.arguments,
   });
 
   final String title;
