@@ -7,6 +7,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import '../models/journal_entry.dart';
 import '../models/mood.dart';
+import '../models/weather_info.dart';
 
 /// Platform-agnostic storage service for journal entries
 /// Uses SharedPreferences on web, SQLite on mobile/desktop
@@ -67,6 +68,23 @@ class WebJournalStorageService implements JournalStorageService {
             'fontSize': t.fontSize,
           };
         }).toList(),
+        'weather': entry.weather != null
+            ? {
+                'locationName': entry.weather!.locationName,
+                'region': entry.weather!.region,
+                'country': entry.weather!.country,
+                'lastUpdated': entry.weather!.lastUpdated.toIso8601String(),
+                'temperatureC': entry.weather!.temperatureC,
+                'feelsLikeC': entry.weather!.feelsLikeC,
+                'humidity': entry.weather!.humidity,
+                'windSpeedKph': entry.weather!.windSpeedKph,
+                'chanceOfRain': entry.weather!.chanceOfRain,
+                'uvIndex': entry.weather!.uvIndex,
+                'conditionText': entry.weather!.conditionText,
+                'conditionIconUrl': entry.weather!.conditionIconUrl,
+                'airQualityIndex': entry.weather!.airQualityIndex,
+              }
+            : null,
       };
 
       allEntries[dateKey] = entryJson;
@@ -228,11 +246,38 @@ class WebJournalStorageService implements JournalStorageService {
       }).toList();
     }
 
+    WeatherInfo? weather;
+    if (entryJson['weather'] != null) {
+      try {
+        final weatherMap = entryJson['weather'] as Map<String, dynamic>;
+        weather = WeatherInfo(
+          locationName: weatherMap['locationName'] as String? ?? 'Unknown',
+          region: weatherMap['region'] as String? ?? '',
+          country: weatherMap['country'] as String? ?? '',
+          lastUpdated: DateTime.tryParse(weatherMap['lastUpdated'] as String? ?? '') ?? DateTime.now(),
+          temperatureC: (weatherMap['temperatureC'] as num?)?.toDouble() ?? 0.0,
+          feelsLikeC: (weatherMap['feelsLikeC'] as num?)?.toDouble() ?? 0.0,
+          humidity: (weatherMap['humidity'] as num?)?.toInt() ?? 0,
+          windSpeedKph: (weatherMap['windSpeedKph'] as num?)?.toDouble() ?? 0.0,
+          chanceOfRain: (weatherMap['chanceOfRain'] as num?)?.toInt() ?? 0,
+          uvIndex: (weatherMap['uvIndex'] as num?)?.toDouble() ?? 0.0,
+          conditionText: weatherMap['conditionText'] as String? ?? 'N/A',
+          conditionIconUrl: weatherMap['conditionIconUrl'] as String? ?? '',
+          airQualityIndex: (weatherMap['airQualityIndex'] as num?)?.toInt() ?? 0,
+        );
+      } catch (e) {
+        if (kDebugMode) {
+          debugPrint('[WebJournalStorage] Error parsing weather: $e');
+        }
+      }
+    }
+
     return JournalEntry(
       mood: mood,
       strokes: strokes,
       stickers: stickers,
       texts: texts,
+      weather: weather,
     );
   }
 }

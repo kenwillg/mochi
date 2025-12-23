@@ -3,6 +3,7 @@ import 'dart:ui';
 import 'package:flutter/material.dart';
 
 import 'mood.dart';
+import 'weather_info.dart';
 
 class DrawnStroke {
   const DrawnStroke({required this.points, this.color = Colors.black87});
@@ -72,24 +73,28 @@ class JournalEntry {
     this.strokes = const [],
     this.stickers = const [],
     this.texts = const [],
+    this.weather,
   });
 
   final Mood? mood;
   final List<DrawnStroke> strokes;
   final List<StickerPlacement> stickers;
   final List<TextPlacement> texts;
+  final WeatherInfo? weather;
 
   JournalEntry copyWith({
     Mood? mood,
     List<DrawnStroke>? strokes,
     List<StickerPlacement>? stickers,
     List<TextPlacement>? texts,
+    WeatherInfo? weather,
   }) {
     return JournalEntry(
       mood: mood ?? this.mood,
       strokes: strokes ?? List.of(this.strokes),
       stickers: stickers ?? List.of(this.stickers),
       texts: texts ?? List.of(this.texts),
+      weather: weather ?? this.weather,
     );
   }
 }

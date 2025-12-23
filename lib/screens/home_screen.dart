@@ -11,7 +11,6 @@ import '../widgets/daily_details_card.dart';
 import '../widgets/weather_icon_button.dart';
 import 'bookshelf_screen.dart';
 import 'demo_menu_screen.dart';
-import 'journal_entry_screen.dart';
 import 'stats_screen.dart';
 
 // --- CALENDAR PAGE ---
@@ -118,14 +117,6 @@ class _MochiHomePageState extends ConsumerState<MochiHomePage> {
     }
   }
 
-  bool _entryHasContent(JournalEntry? entry) {
-    if (entry == null) {
-      return false;
-    }
-    return entry.mood != null ||
-        entry.strokes.isNotEmpty ||
-        entry.stickers.isNotEmpty;
-  }
 
   Future<void> _showMonthYearPicker(BuildContext context, DateTime focusedDay) async {
     final initialYear = focusedDay.year;
@@ -319,15 +310,8 @@ class _MochiHomePageState extends ConsumerState<MochiHomePage> {
                   newSelectedDay.month,
                   newSelectedDay.day,
                 );
-                final entry = ref.read(journalProvider)[dateKey];
-                if (_entryHasContent(entry)) {
-                  await Navigator.of(context).pushNamed(
-                    JournalEntryScreen.routeName,
-                    arguments: JournalEntryScreenArguments(date: dateKey),
-                  );
-                } else {
-                  await _openEntryDialog(dateKey);
-                }
+                // Always open the dialog - it will show view mode if mood is set, edit mode otherwise
+                await _openEntryDialog(dateKey);
               }
             },
             calendarBuilders: CalendarBuilders(

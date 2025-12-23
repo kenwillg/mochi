@@ -3,6 +3,7 @@ import 'package:flutter/foundation.dart';
 
 import '../models/journal_entry.dart';
 import '../models/mood.dart';
+import '../models/weather_info.dart';
 import '../services/journal_storage_factory.dart';
 import '../services/journal_storage_service.dart';
 import '../services/preferences_service.dart';
@@ -84,10 +85,13 @@ class JournalDataNotifier extends Notifier<Map<DateTime, JournalEntry>> {
     return state[normalized] ?? const JournalEntry();
   }
 
-  void updateMood(DateTime date, Mood newMood) {
+  void updateMood(DateTime date, Mood newMood, {WeatherInfo? weather}) {
     final normalized = _normalize(date);
     final current = entryFor(normalized);
-    final updated = current.copyWith(mood: newMood);
+    final updated = current.copyWith(
+      mood: newMood,
+      weather: weather ?? current.weather, // Keep existing weather if not provided
+    );
 
     state = {...state, normalized: updated};
 

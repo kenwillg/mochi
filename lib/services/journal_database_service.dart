@@ -8,13 +8,14 @@ import 'package:path/path.dart';
 
 import '../models/journal_entry.dart';
 import '../models/mood.dart';
+import '../models/weather_info.dart';
 import 'journal_storage_service.dart';
 
 /// Service for managing journal entries in SQLite database
 /// Provides debugging capabilities with detailed logging
 class JournalDatabaseService implements JournalStorageService {
   static const String _databaseName = 'journal.db';
-  static const int _databaseVersion = 1;
+  static const int _databaseVersion = 2;
   static const String _tableName = 'journal_entries';
 
   Database? _database;
@@ -56,6 +57,7 @@ class JournalDatabaseService implements JournalStorageService {
         strokes TEXT,
         stickers TEXT,
         texts TEXT,
+        weather TEXT,
         created_at INTEGER,
         updated_at INTEGER
       )
@@ -73,7 +75,20 @@ class JournalDatabaseService implements JournalStorageService {
         '[JournalDatabase] Upgrading database from version $oldVersion to $newVersion',
       );
     }
-    // Add migration logic here if needed
+    // Add weather column if upgrading from version 1
+    if (oldVersion < 2) {
+      try {
+        await db.execute('ALTER TABLE $_tableName ADD COLUMN weather TEXT');
+        if (kDebugMode) {
+          debugPrint('[JournalDatabase] Added weather column');
+        }
+      } catch (e) {
+        // Column might already exist, ignore error
+        if (kDebugMode) {
+          debugPrint('[JournalDatabase] Weather column may already exist: $e');
+        }
+      }
+    }
   }
 
   /// Save journal entry to database
@@ -120,6 +135,23 @@ class JournalDatabaseService implements JournalStorageService {
             )
             .toList(),
       );
+      final weatherJson = entry.weather != null
+          ? jsonEncode({
+              'locationName': entry.weather!.locationName,
+              'region': entry.weather!.region,
+              'country': entry.weather!.country,
+              'lastUpdated': entry.weather!.lastUpdated.toIso8601String(),
+              'temperatureC': entry.weather!.temperatureC,
+              'feelsLikeC': entry.weather!.feelsLikeC,
+              'humidity': entry.weather!.humidity,
+              'windSpeedKph': entry.weather!.windSpeedKph,
+              'chanceOfRain': entry.weather!.chanceOfRain,
+              'uvIndex': entry.weather!.uvIndex,
+              'conditionText': entry.weather!.conditionText,
+              'conditionIconUrl': entry.weather!.conditionIconUrl,
+              'airQualityIndex': entry.weather!.airQualityIndex,
+            })
+          : null;
 
       await db.insert(_tableName, {
         'date': dateKey,
@@ -127,6 +159,7 @@ class JournalDatabaseService implements JournalStorageService {
         'strokes': strokesJson,
         'stickers': stickersJson,
         'texts': textsJson,
+        'weather': weatherJson,
         'created_at': now,
         'updated_at': now,
       }, conflictAlgorithm: ConflictAlgorithm.replace);
@@ -167,6 +200,7 @@ class JournalDatabaseService implements JournalStorageService {
       final strokesJson = map['strokes'] as String?;
       final stickersJson = map['stickers'] as String?;
       final textsJson = map['texts'] as String?;
+      final weatherJson = map['weather'] as String?;
 
       Mood? mood;
       if (moodStr != null) {
@@ -226,6 +260,32 @@ class JournalDatabaseService implements JournalStorageService {
         }).toList();
       }
 
+      WeatherInfo? weather;
+      if (weatherJson != null && weatherJson.isNotEmpty) {
+        try {
+          final weatherMap = jsonDecode(weatherJson) as Map<String, dynamic>;
+          weather = WeatherInfo(
+            locationName: weatherMap['locationName'] as String? ?? 'Unknown',
+            region: weatherMap['region'] as String? ?? '',
+            country: weatherMap['country'] as String? ?? '',
+            lastUpdated: DateTime.tryParse(weatherMap['lastUpdated'] as String? ?? '') ?? DateTime.now(),
+            temperatureC: (weatherMap['temperatureC'] as num?)?.toDouble() ?? 0.0,
+            feelsLikeC: (weatherMap['feelsLikeC'] as num?)?.toDouble() ?? 0.0,
+            humidity: (weatherMap['humidity'] as num?)?.toInt() ?? 0,
+            windSpeedKph: (weatherMap['windSpeedKph'] as num?)?.toDouble() ?? 0.0,
+            chanceOfRain: (weatherMap['chanceOfRain'] as num?)?.toInt() ?? 0,
+            uvIndex: (weatherMap['uvIndex'] as num?)?.toDouble() ?? 0.0,
+            conditionText: weatherMap['conditionText'] as String? ?? 'N/A',
+            conditionIconUrl: weatherMap['conditionIconUrl'] as String? ?? '',
+            airQualityIndex: (weatherMap['airQualityIndex'] as num?)?.toInt() ?? 0,
+          );
+        } catch (e) {
+          if (kDebugMode) {
+            debugPrint('[JournalDatabase] Error parsing weather: $e');
+          }
+        }
+      }
+
       if (kDebugMode) {
         debugPrint('[JournalDatabase] Loaded entry for date: $dateKey');
       }
@@ -235,6 +295,7 @@ class JournalDatabaseService implements JournalStorageService {
         strokes: strokes,
         stickers: stickers,
         texts: texts,
+        weather: weather,
       );
     } catch (e) {
       if (kDebugMode) {
